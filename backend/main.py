@@ -127,22 +127,36 @@ async def websocket_endpoint(
         
         # Listen for messages
         while True:
-            data = await websocket.receive_json()
+            # We use receive() instead of receive_json() to handle both text(json) and bytes(audio)
+            message = await websocket.receive()
             
-            event_type = data.get('event_type')
-            
-            # Route events to handlers
-            if event_type == 'transcription.new':
-                await handle_transcription_event(session_id, data.get('data', {}))
-            
-            elif event_type == 'participant.joined':
-                await handle_participant_join(session_id, data.get('data', {}))
-            
-            elif event_type == 'participant.left':
-                await handle_participant_leave(session_id, data.get('data', {}))
-            
-            else:
-                logger.warning(f"Unknown event type: {event_type}")
+            if "text" in message:
+                import json
+                try:
+                    data = json.loads(message["text"])
+                    event_type = data.get('event_type')
+                    
+                    # Route events to handlers
+                    if event_type == 'transcription.new':
+                        await handle_transcription_event(session_id, data.get('data', {}))
+                    
+                    elif event_type == 'participant.joined':
+                        await handle_participant_join(session_id, data.get('data', {}))
+                    
+                    elif event_type == 'participant.left':
+                        await handle_participant_leave(session_id, data.get('data', {}))
+                    
+                    else:
+                        logger.warning(f"Unknown event type: {event_type}")
+
+                except json.JSONDecodeError:
+                    logger.error("Failed to decode JSON message")
+
+            elif "bytes" in message:
+                # Handle binary audio data
+                audio_data = message["bytes"]
+                from services.deepgram_service import deepgram_service
+                await deepgram_service.send_audio(session_id, audio_data)
     
     except WebSocketDisconnect:
         connection_manager.disconnect(websocket, session_id, role)

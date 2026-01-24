@@ -25,3 +25,7 @@
 }
 
 /* Zoom Web SDK will inject its own styles */
+#meetingSDKElement {
+  width: 100%;
+  height: 100%;
+}

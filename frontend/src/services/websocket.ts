@@ -118,6 +118,12 @@ class WebSocketService {
       );
     }
   }
+
+  sendAudio(audioData: Blob | ArrayBuffer) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(audioData);
+    }
+  }
 }
 
 export const wsService = new WebSocketService();
