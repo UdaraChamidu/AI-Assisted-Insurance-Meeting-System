@@ -88,11 +88,13 @@ const AgentAssistPage: React.FC = () => {
       }
 
       // 4. Record and Stream
+      console.log('DEBUG: Starting MediaRecorder...');
       const mixedStream = destination.stream;
       const mediaRecorder = new MediaRecorder(mixedStream, { mimeType: 'audio/webm' });
       
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0 && wsService) {
+          console.log(`DEBUG: Sending audio chunk size: ${event.data.size}`);
           wsService.sendAudio(event.data);
         }
       };

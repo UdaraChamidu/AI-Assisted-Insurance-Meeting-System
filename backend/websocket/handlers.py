@@ -34,12 +34,12 @@ async def handle_transcription_event(
             session_id=session_id,
             event_type='transcription.new',
             data=transcript_data,
-            staff_only=True  # Customer doesn't see transcription
+            staff_only=True
         )
         
-        # If customer is speaking, process for AI
-        if speaker == 'customer' and len(text.strip()) > 10:
-            # Process in background to not block
+        # Trigger AI on valid text (Relaxed speaker check for testing)
+        if len(text.strip()) > 10:
+            # Process in background
             asyncio.create_task(
                 process_customer_query(session_id, text)
             )
@@ -53,16 +53,12 @@ async def process_customer_query(
     query: str
 ):
     """
-    Process customer query through RAG and AI.
-    
-    Args:
-        session_id: Session identifier
-        query: Customer's question
+    Process query through RAG and AI.
     """
     try:
         logger.info(f"Processing query: {query[:100]}")
         
-        # Send "processing" status to staff
+        # 1. Notify Staff: Processing
         await connection_manager.broadcast_event(
             session_id=session_id,
             event_type='ai.processing',
@@ -70,28 +66,33 @@ async def process_customer_query(
             staff_only=True
         )
         
-        # Retrieve context from RAG
-        rag_result = retriever_service.retrieve(query, top_k=5)
-        
-        # Send RAG context to staff
-        await connection_manager.broadcast_event(
-            session_id=session_id,
-            event_type='rag.context',
-            data={
-                'query': query,
-                'chunks': rag_result['chunks'],
-                'total_results': rag_result['total_results']
-            },
-            staff_only=True
-        )
-        
-        # Generate AI response
+        # 2. RAG Retrieval (Optional / Try-Except)
+        context_chunks = []
+        try:
+            rag_result = retriever_service.retrieve(query, top_k=3)
+            context_chunks = rag_result.get('chunks', [])
+            
+            # Send RAG context to staff
+            await connection_manager.broadcast_event(
+                session_id=session_id,
+                event_type='rag.context',
+                data={
+                    'query': query,
+                    'chunks': context_chunks,
+                    'total_results': rag_result.get('total_results', 0)
+                },
+                staff_only=True
+            )
+        except Exception as e:
+            logger.warning(f"RAG Retrieval failed (skipping): {e}")
+
+        # 3. Generate AI Response (Gemini)
         ai_response = gemini_service.generate_response(
             query=query,
-            context_chunks=rag_result['chunks']
+            context_chunks=context_chunks
         )
         
-        # Send AI response to staff only
+        # 4. Send AI Answer to Staff
         await connection_manager.broadcast_event(
             session_id=session_id,
             event_type='ai.response',
@@ -105,26 +106,22 @@ async def process_customer_query(
             staff_only=True
         )
         
-        # Generate voice response for customer (MANDATORY)
-        from services.elevenlabs_service import elevenlabs_service
-        audio_data = elevenlabs_service.text_to_speech(ai_response['answer'])
-        
-        if audio_data:
-            # Send voice audio to customer via WebSocket
-            await connection_manager.send_audio_to_customer(
-                session_id=session_id,
-                audio_data=audio_data
-            )
-            logger.info(f"Voice response sent to customer for query: {query[:50]}")
-        else:
-            logger.warning("Failed to generate voice response, customer will not hear AI")
-        
-        logger.info(f"AI response and voice sent for query: {query[:50]}")
-    
+        # 5. Voice Generation (Optional / Try-Except)
+        try:
+            from services.elevenlabs_service import elevenlabs_service
+            audio_data = elevenlabs_service.text_to_speech(ai_response['answer'])
+            
+            if audio_data:
+                await connection_manager.send_audio_to_customer(
+                    session_id=session_id,
+                    audio_data=audio_data
+                )
+                logger.info("Voice response sent")
+        except Exception as e:
+            logger.warning(f"Voice generation failed (skipping): {e}")
+            
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}")
-        
-        # Send error to staff
         await connection_manager.broadcast_event(
             session_id=session_id,
             event_type='ai.error',
@@ -175,3 +172,42 @@ async def handle_participant_leave(
         )
     except Exception as e:
         logger.error(f"Error handling participant leave: {str(e)}")
+
+
+async def handle_start_transcription(session_id: str):
+    """
+    Start transcription for a session (Idempotent).
+    """
+    try:
+        from services.deepgram_service import deepgram_service
+        
+        # Check if already connected
+        print(f"DEBUG: Checking if already connected for {session_id}", flush=True)
+        if deepgram_service.is_connected(session_id):
+            print(f"DEBUG: Already connected, skipping startup for {session_id}", flush=True)
+            return
+
+        print(f"DEBUG: Not connected, starting new connection for {session_id}", flush=True)
+        
+        # Callback to handle new transcripts
+        async def on_transcript(text, speaker, confidence):
+            # Construct transcript data
+            data = {
+                "text": text,
+                "speaker": speaker,
+                "confidence": confidence,
+                "timestamp": datetime.utcnow().isoformat(),
+                "is_final": True
+            }
+            # Process via existing handler
+            await handle_transcription_event(session_id, data)
+
+        # Start Deepgram
+        await deepgram_service.start_transcription(
+            session_id=session_id,
+            on_transcript=on_transcript
+        )
+        logger.info(f"Transcription service started for session {session_id}")
+
+    except Exception as e:
+        logger.error(f"Failed to start transcription handler: {e}")

@@ -114,6 +114,8 @@ async def websocket_endpoint(
     """
     await connection_manager.connect(websocket, session_id, role)
     
+    # Transcription will lazy-load on first audio packet
+    
     try:
         # Send welcome message
         await websocket.send_json({
@@ -155,8 +157,24 @@ async def websocket_endpoint(
             elif "bytes" in message:
                 # Handle binary audio data
                 audio_data = message["bytes"]
+                print(f"DEBUG: Received audio bytes: {len(audio_data)}") # UNCOMMENTED
+                
+                # Lazy-load transcription service if not running
+                print(f"DEBUG: About to start transcription for {session_id}")
+                try:
+                    from websocket.handlers import handle_start_transcription
+                    await handle_start_transcription(session_id)
+                    print(f"DEBUG: handle_start_transcription completed")
+                except Exception as e:
+                    print(f"DEBUG: ERROR starting transcription: {e}")
+                    import traceback
+                    traceback.print_exc()
+                
                 from services.deepgram_service import deepgram_service
                 await deepgram_service.send_audio(session_id, audio_data)
+            
+            else:
+                print(f"DEBUG: Received unknown message type: {message.keys()}")
     
     except WebSocketDisconnect:
         connection_manager.disconnect(websocket, session_id, role)
