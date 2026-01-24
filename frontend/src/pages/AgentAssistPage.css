@@ -1,47 +1,135 @@
+/* Main Grid Layout */
 .agent-assist-page {
-  display: flex;
+  display: grid;
+  grid-template-columns: 20% 40% 40%; /* 3 columns: Zoom (50%), AI (25%), Transcript (25%) */
+  grid-template-rows: 64px 1fr; /* Header height + Content */
   height: 100vh;
-  background: #1a1a1a;
+  width: 100vw;
+  background: #0f1014; /* Deep dark background */
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
 }
 
-.main-panel {
-  flex: 1;
-  background: #000;
+/* Control Bar (Top Header area overlay or integrated) */
+/* We'll actually place the control bar inside the main grid or absolutely positioned if needed via React inline styles for now, 
+   but let's define button styles here */
+
+.control-bar {
+  grid-column: 1 / -1;
+  background: #1a1b26;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 10;
+}
+
+/* Columns */
+.col-zoom {
+  grid-column: 1;
+  grid-row: 2;
   position: relative;
+  background: #000;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+
 }
 
-.side-panel {
-  width: 400px;
-  background: #2a2a2a;
+.col-ai {
+  grid-column: 2;
+  grid-row: 2;
+  background: #13141c;
   display: flex;
   flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.col-transcript {
+  grid-column: 3;
+  grid-row: 2;
+  background: #13141c;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Headers for columns */
+.col-header {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.col-content {
+  flex: 1;
   overflow-y: auto;
+  padding: 0;
 }
 
-.panel-section {
-  padding: 15px;
-  border-bottom: 1px solid #444;
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.panel-section h3 {
-  margin: 0 0 15px 0;
-  color: #fff;
-  font-size: 1rem;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.transcription-section {
-  flex: 1;
-  min-height: 300px;
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }
 
-.ai-section {
-  flex: 1;
-  min-height: 250px;
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
-.rag-section {
-  flex: 1;
-  min-height: 200px;
+/* Premium Buttons */
+.btn-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.4);
+  filter: brightness(1.1);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(239, 68, 68, 0.4);
+  filter: brightness(1.1);
 }
 
 .loading-container,
@@ -50,6 +138,6 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: #1a1a1a;
+  background: #0f1014;
   color: white;
 }

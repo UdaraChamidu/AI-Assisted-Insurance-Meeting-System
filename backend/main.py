@@ -179,10 +179,22 @@ async def websocket_endpoint(
     except WebSocketDisconnect:
         connection_manager.disconnect(websocket, session_id, role)
         logger.info(f"WebSocket disconnected: session={session_id}, role={role}")
+        
+        # Clean up Deepgram connection for this session
+        from services.deepgram_service import deepgram_service
+        await deepgram_service.stop_transcription(session_id)
+        print(f"DEBUG: Cleaned up Deepgram connection for {session_id}")
+    
     
     except Exception as e:
         logger.error(f"WebSocket error: {str(e)}")
         connection_manager.disconnect(websocket, session_id, role)
+        
+        # Clean up Deepgram connection
+        from services.deepgram_service import deepgram_service
+        await deepgram_service.stop_transcription(session_id)
+        print(f"DEBUG: Cleaned up Deepgram connection for {session_id} (error case)")
+
 
 if __name__ == "__main__":
     import uvicorn

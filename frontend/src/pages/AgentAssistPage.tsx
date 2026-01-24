@@ -122,7 +122,6 @@ const AgentAssistPage: React.FC = () => {
     }
   };
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   if (loading) {
     return (
@@ -141,156 +140,76 @@ const AgentAssistPage: React.FC = () => {
   }
 
   return (
-    <div className="agent-assist-page" style={{ position: 'relative', height: '100vh', overflow: 'hidden', background: '#000' }}>
+    <div className="agent-assist-page">
       
-      {/* Zoom Container - Resizes based on sidebar */}
-      <div style={{ 
-        position: 'absolute', 
-        top: 0, 
-        left: 0, 
-        // If sidebar is open, leave space on the right. Otherwise full width.
-        right: isSidebarOpen ? '380px' : '0', 
-        bottom: 0, 
-        transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        zIndex: 0 
-      }}>
-        <ZoomMeeting
-          meetingId={session.zoom_meeting_id}
-          password={session.zoom_meeting_password}
-          isCustomer={false}
-          userName="Agent"
-        />
-      </div>
-
-      {/* Floating Control Dock - Below Navbar */}
-      <div className="floating-dock" style={{
-        position: 'fixed',
-        top: '80px', // Pushed down to avoid Navbar overlap
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 1000,
-        background: 'rgba(26, 27, 38, 0.85)',
-        backdropFilter: 'blur(8px)',
-        padding: '8px 20px',
-        borderRadius: '50px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '20px',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        transition: 'all 0.3s ease'
-      }}>
-        {/* Audio Control */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>🎙️ Audio:</span>
-          {!mediaRecorderRef.current ? (
-            <button 
-              onClick={startAudioCapture}
-              style={{
-                background: '#3b82f6',
-                color: '#fff',
-                border: 'none',
-                padding: '6px 14px',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '13px',
-                transition: 'background 0.2s'
-              }}
-            >
-              Start Stream
-            </button>
-          ) : (
-            <button 
-              onClick={stopAudioCapture}
-              style={{
-                background: '#ef4444',
-                color: '#fff',
-                border: 'none',
-                padding: '6px 14px',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '13px',
-                animation: 'pulse 2s infinite'
-              }}
-            >
-              Stop
-            </button>
-          )}
+      {/* 1. Zoom Column (20%) */}
+      <div className="col-zoom">
+        <div style={{ position: 'absolute', top: 100, left: 27, right: 0, bottom: 0 }}>
+             <ZoomMeeting
+              meetingId={session.zoom_meeting_id}
+              password={session.zoom_meeting_password}
+              isCustomer={false}
+              userName="Agent"
+            />
         </div>
-
-        <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.2)' }} />
-
-        {/* Sidebar Toggle */}
-        <button 
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          style={{
-            background: 'transparent',
-            color: '#fff',
-            border: 'none',
-            padding: '4px 8px',
-            cursor: 'pointer',
-            fontSize: '13px',
+        
+        {/* Overlay Controls for Audio */}
+        <div style={{
+            position: 'absolute',
+            top: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 10,
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(8px)',
+            padding: '8px 16px',
+            borderRadius: '12px',
+            border: '1px solid rgba(255,255,255,0.1)',
             display: 'flex',
+            gap: '12px',
             alignItems: 'center',
-            gap: '6px',
-            opacity: 0.9
-          }}
-        >
-          {isSidebarOpen ? 'Hide Panel' : 'Show Panel'} 
-          <span style={{ fontSize: '16px' }}>{isSidebarOpen ? '→' : '←'}</span>
-        </button>
+            justifyContent: 'center',
+        }}>
+             {!mediaRecorderRef.current ? (
+                <button className="btn-control btn-primary" onClick={startAudioCapture}>
+                    <span>🎙️</span> Start Stream
+                </button>
+             ) : (
+                <button className="btn-control btn-danger" onClick={stopAudioCapture}>
+                    <span>⏹️</span> Stop Stream
+                </button>
+             )}
+        </div>
       </div>
 
-      {/* Fixed Sidebar - Takes up actual space now (via Zoom container resizing) */}
-      <div className={`floating-sidebar ${isSidebarOpen ? 'open' : ''}`} style={{
-        position: 'fixed',
-        top: '64px', // Below standard navbar height
-        right: 0,
-        bottom: 0,
-        width: '380px',
-        background: '#1a1b26',
-        borderLeft: '1px solid rgba(255,255,255,0.1)',
-        zIndex: 100,
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '-4px 0 20px rgba(0,0,0,0.2)',
-        transform: isSidebarOpen ? 'translateX(0)' : 'translateX(100%)',
-        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        overflow: 'hidden'
-      }}>
-        <div style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)' }}>
-          <h3 style={{ margin: 0, color: '#fff', fontSize: '15px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            🤖 Agent Assistant
-          </h3>
+      {/* 2. AI Suggestions Column (35%) */}
+      <div className="col-ai">
+        <div className="col-header" style={{ color: '#c084fc' }}>
+            <span>✨</span> AI Copilot
         </div>
+        <div className="col-content">
+            <div style={{ padding: '0' }}>
+                <AISuggestions response={aiResponse} />
+            </div>
+            <div style={{ padding: '0', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="col-header" style={{ color: '#4ade80', fontSize: '12px', padding: '12px 16px' }}>
+                    <span>📚</span> Knowledge Base
+                </div>
+                <RAGContext context={ragContext} />
+            </div>
+        </div>
+      </div>
 
-        <div style={{ overflowY: 'auto', flex: 1, padding: '0' }}>
-          <div className="panel-section transcription-section" style={{ padding: '16px' }}>
-            <h4 style={{ color: '#60a5fa', margin: '0 0 10px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Live Transcription</h4>
+      {/* 3. Live Transcription Column (35%) */}
+      <div className="col-transcript">
+        <div className="col-header" style={{ color: '#60a5fa' }}>
+            <span>📝</span> Live Transcript
+        </div>
+        <div className="col-content">
             <LiveTranscription transcripts={transcripts} />
-          </div>
-
-          <div className="panel-section ai-section" style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-            <h4 style={{ color: '#c084fc', margin: '0 0 10px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>AI Suggestions</h4>
-            <AISuggestions response={aiResponse} />
-          </div>
-
-          <div className="panel-section rag-section" style={{ padding: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-            <h4 style={{ color: '#4ade80', margin: '0 0 10px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Knowledge Base</h4>
-            <RAGContext context={ragContext} />
-          </div>
         </div>
       </div>
 
-      <style>{`
-        @keyframes pulse {
-          0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-          70% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-      `}</style>
     </div>
   );
 };

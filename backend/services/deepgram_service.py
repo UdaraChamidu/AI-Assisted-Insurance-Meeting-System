@@ -72,6 +72,8 @@ class DeepgramService:
             def on_close(_, close, **kwargs):
                 print(f"DEBUG: Deepgram Connection closed for session {session_id}", flush=True)
                 logger.info(f"Deepgram Connection closed for session {session_id}")
+                if session_id in service._connections:
+                    del service._connections[session_id]
 
             dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
             dg_connection.on(LiveTranscriptionEvents.Error, on_error)
