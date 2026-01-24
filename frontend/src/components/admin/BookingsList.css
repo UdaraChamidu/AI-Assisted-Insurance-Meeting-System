@@ -1,0 +1,158 @@
+.bookings-list {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bookings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.bookings-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.section-title {
+  color: #667eea;
+  font-size: 1rem;
+  margin: 24px 0 16px 0;
+  font-weight: 600;
+}
+
+.bookings-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.bookings-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bookings-table th,
+.bookings-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.bookings-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.booking-upcoming {
+  background: #f0f8ff;
+}
+
+.booking-upcoming:hover {
+  background: #e6f2ff;
+}
+
+.booking-past {
+  opacity: 0.7;
+}
+
+.booking-past:hover {
+  background: #f8f9fa;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.status-confirmed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.btn-reminder,
+.btn-join {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-right: 8px;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s;
+}
+
+.btn-reminder {
+  background: #ffc107;
+  color: #333;
+}
+
+.btn-reminder:hover {
+  background: #ffb300;
+}
+
+.btn-join {
+  background: #667eea;
+  color: white;
+}
+
+.btn-join:hover {
+  background: #5568d3;
+}
+
+.btn-copy-link {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  background: white;
+  color: #333;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+}
+
+.btn-copy-link:hover {
+  background: #f8f9fa;
+  border-color: #bbb;
+}
+
+.bookings-empty {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+}
+
+@media (max-width: 768px) {
+  .bookings-table {
+    font-size: 0.85rem;
+  }
+
+  .bookings-table th,
+  .bookings-table td {
+    padding: 8px;
+  }
+
+  .btn-reminder,
+  .btn-join {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+}

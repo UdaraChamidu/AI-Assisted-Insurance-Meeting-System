@@ -1,0 +1,138 @@
+.leads-list {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.leads-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.leads-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.refresh-btn {
+  padding: 8px 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.3s;
+}
+
+.refresh-btn:hover {
+  background: #0056b3;
+}
+
+.leads-table-wrapper {
+  overflow-x: auto;
+}
+
+.leads-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leads-table th,
+.leads-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.leads-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.leads-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.notes-cell {
+  max-width: 300px;
+}
+
+.notes-content {
+  max-height: 60px;
+  overflow-y: auto;
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.4;
+}
+
+.status-sent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #28a745;
+  font-weight: 500;
+}
+
+.status-failed {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.sent-time {
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-weight: normal;
+}
+
+.resend-btn {
+  padding: 6px 12px;
+  background: #17a2b8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.3s;
+}
+
+.resend-btn:hover {
+  background: #138496;
+}
+
+.leads-empty {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+  font-size: 1rem;
+}
+
+.leads-empty p {
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .leads-table-wrapper {
+    border-radius: 4px;
+  }
+
+  .leads-table {
+    font-size: 0.85rem;
+  }
+
+  .leads-table th,
+  .leads-table td {
+    padding: 8px;
+  }
+
+  .notes-content {
+    max-height: 40px;
+    font-size: 0.8rem;
+  }
+}

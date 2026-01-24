@@ -1,0 +1,27 @@
+.zoom-meeting {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #000;
+}
+
+.zoom-loading,
+.zoom-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
+}
+
+.zoom-error {
+  color: #f44336;
+}
+
+.zoom-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* Zoom Web SDK will inject its own styles */

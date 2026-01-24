@@ -1,0 +1,65 @@
+.rag-context {
+  background: #1e1e1e;
+  border-radius: 8px;
+  padding: 10px;
+  color: #fff;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.no-context {
+  color: #999;
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+}
+
+.context-query {
+  background: #2a2a2a;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  color: #ddd;
+}
+
+.context-results {
+  font-size: 0.85rem;
+}
+
+.context-results > p {
+  margin: 0 0 10px 0;
+  color: #999;
+}
+
+.context-chunk {
+  background: #2a2a2a;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border-left: 3px solid #ff9800;
+}
+
+.chunk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+}
+
+.chunk-source {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+.chunk-score {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.chunk-text {
+  color: #ddd;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
