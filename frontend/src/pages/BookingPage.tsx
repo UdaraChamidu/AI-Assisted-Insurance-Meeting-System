@@ -11,6 +11,7 @@ const BookingPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [isValidLead, setIsValidLead] = useState(false); // Track if leadId is valid
 
   // Form data
   const [formData, setFormData] = useState({
@@ -39,35 +40,37 @@ const BookingPage: React.FC = () => {
         name: lead.customer_name || '',
         phone: lead.phone_number || '',
       });
+      setIsValidLead(true); // Mark as valid ID
     } catch (err) {
       console.error('Failed to load lead:', err);
+      // Don't set isValidLead to true, so we ignore the ID later
     }
   };
 
-  // Generate time slots (9 AM - 5 PM, 30-min intervals)
-  const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 9; hour <= 17; hour++) {
-      for (let min of [0, 30]) {
-        if (hour === 17 && min === 30) break; // Stop at 5:00 PM
-        const time = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
-        const period = hour >= 12 ? 'PM' : 'AM';
-        const displayHour = hour > 12 ? hour - 12 : hour;
-        const displayTime = `${displayHour}:${min.toString().padStart(2, '0')} ${period}`;
-        slots.push({ value: time, label: displayTime });
-      }
-    }
-    return slots;
-  };
-
-  const timeSlots = generateTimeSlots();
-
-  // Get minimum date (tomorrow)
   const getMinDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
+    const today = new Date();
+    return today.toISOString().split('T')[0];
   };
+
+  const timeSlots = [
+    { value: '09:00', label: '09:00 AM' },
+    { value: '09:30', label: '09:30 AM' },
+    { value: '10:00', label: '10:00 AM' },
+    { value: '10:30', label: '10:30 AM' },
+    { value: '11:00', label: '11:00 AM' },
+    { value: '11:30', label: '11:30 AM' },
+    { value: '12:00', label: '12:00 PM' },
+    { value: '12:30', label: '12:30 PM' },
+    { value: '13:00', label: '01:00 PM' },
+    { value: '13:30', label: '01:30 PM' },
+    { value: '14:00', label: '02:00 PM' },
+    { value: '14:30', label: '02:30 PM' },
+    { value: '15:00', label: '03:00 PM' },
+    { value: '15:30', label: '03:30 PM' },
+    { value: '16:00', label: '04:00 PM' },
+    { value: '16:30', label: '04:30 PM' },
+    { value: '17:00', label: '05:00 PM' },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,8 +84,9 @@ const BookingPage: React.FC = () => {
       }
 
       // Create booking
+      // Only include lead_id if we successfully validated it
       await apiClient.createBooking({
-        lead_id: leadId || undefined,
+        lead_id: (isValidLead && leadId) ? leadId : undefined,
         customer_name: formData.name,
         customer_email: formData.email,
         customer_phone: formData.phone,
