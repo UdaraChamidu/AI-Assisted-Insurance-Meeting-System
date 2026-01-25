@@ -137,8 +137,11 @@ const JoinPage: React.FC = () => {
   };
 
   // Debug State
+  // Debug State
   const [logs, setLogs] = useState<string[]>([]);
   const addLog = (msg: string) => setLogs(prev => [msg, ...prev].slice(0, 5));
+  
+  const [aiResponseText, setAiResponseText] = useState<string | null>(null);
 
   // Connect WS
   useEffect(() => {
@@ -151,6 +154,7 @@ const JoinPage: React.FC = () => {
         wsService.on('ai.response', (data) => {
             addLog(`🤖 AI Data: ${JSON.stringify(data).substring(0, 50)}...`);
             if (data.data && data.data.text) {
+                setAiResponseText(data.data.text);
                 speakText(data.data.text);
             } else {
                 addLog("❌ No text in AI response");
@@ -209,6 +213,56 @@ const JoinPage: React.FC = () => {
             userName={name}
             isCustomer={true}
           />
+
+          {/* AI Response Overlay */}
+          {aiResponseText && (
+            <div style={{
+                position: 'absolute',
+                top: '20%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(255, 255, 255, 0.95)',
+                padding: '20px',
+                borderRadius: '15px',
+                maxWidth: '90%',
+                width: '400px',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                zIndex: 10000,
+                textAlign: 'center',
+                border: '1px solid rgba(0,0,0,0.1)'
+            }}>
+                <div style={{
+                    fontSize: '12px', 
+                    textTransform: 'uppercase', 
+                    color: '#667eea', 
+                    marginBottom: '8px', 
+                    fontWeight: 'bold',
+                    letterSpacing: '0.5px'
+                }}>
+                    AI Assistant
+                </div>
+                <div style={{
+                    fontSize: '16px', 
+                    color: '#2d3748', 
+                    lineHeight: '1.5'
+                }}>
+                    {aiResponseText}
+                </div>
+                <button 
+                    onClick={() => setAiResponseText(null)}
+                    style={{
+                        marginTop: '15px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#a0aec0',
+                        fontSize: '12px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    Dismiss
+                </button>
+            </div>
+          )}
           
           {/* Debug Overlay */}
           <div style={{
