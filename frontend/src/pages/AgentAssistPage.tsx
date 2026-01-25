@@ -28,9 +28,8 @@ const AgentAssistPage: React.FC = () => {
     wsService.connect(sessionId, 'staff');
 
     // Subscribe to incoming transcripts (from customer)
-    wsService.on('transcription.new', (data) => {
+    const handleRemoteTranscript = (data: any) => {
         console.log('📨 Received remote transcript:', data);
-        // Only add if it's NOT from us (speaker check is handled below usually, but let's be safe)
         if (data.data && data.data.speaker === 'customer') {
              setTranscripts((prev) => [...prev, {
                 text: data.data.text,
@@ -39,12 +38,14 @@ const AgentAssistPage: React.FC = () => {
                 confidence: data.data.confidence || 1.0
               }]);
               
-              // Also trigger AI for customer speech
               triggerAIReferences(data.data.text);
         }
-    });
+    };
+
+    wsService.on('transcription.new', handleRemoteTranscript);
 
     return () => {
+      wsService.off('transcription.new', handleRemoteTranscript);
       wsService.disconnect();
     };
   }, [sessionId]);
@@ -53,7 +54,16 @@ const AgentAssistPage: React.FC = () => {
       apiClient.chatAI(text, sessionId)
             .then(aiRes => {
                 setAIResponse(aiRes);
-                // TTS logic if needed
+                
+                // Broadcast AI response to Customer so they can hear it
+                wsService.send('ai.response', {
+                    text: aiRes.answer,
+                    speaker: 'ai'
+                });
+
+                // Agent hears it too? Maybe not, usually Agent reads it. 
+                // But let's keep local TTS disabled or optional for Agent.
+                // For now, we ONLY send to customer.
             })
             .catch(err => console.error(err));
   };

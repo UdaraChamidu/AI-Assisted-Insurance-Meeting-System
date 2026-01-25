@@ -140,12 +140,30 @@ const JoinPage: React.FC = () => {
     e.preventDefault();
     if (!name) return;
     
-    // Connect WS
+    // Connect WS and Listen for AI
     if (sessionId) {
         wsService.connect(sessionId, 'customer');
+        
+        wsService.on('ai.response', (data) => {
+            console.log("🤖 Received AI Audio:", data);
+            if (data.data && data.data.text) {
+                speakText(data.data.text);
+            }
+        });
     }
     
     setJoined(true);
+  };
+
+  const speakText = (text: string) => {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      // Try to find a good English voice
+      const voices = window.speechSynthesis.getVoices();
+      const preferred = voices.find(v => v.name.includes("Google US English") || v.lang === "en-US") || voices[0];
+      if (preferred) utterance.voice = preferred;
+      window.speechSynthesis.speak(utterance);
   };
 
   if (loading) return <div className="join-loading">Loading meeting details...</div>;
