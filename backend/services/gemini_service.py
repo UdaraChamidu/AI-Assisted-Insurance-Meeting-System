@@ -6,9 +6,10 @@ import google.generativeai as genai
 from config import settings
 from typing import List, Dict, Optional
 import logging
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
-
+load_dotenv()
 
 class GeminiService:
     """Handles AI response generation using Google Gemini."""
