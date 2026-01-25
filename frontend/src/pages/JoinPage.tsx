@@ -155,14 +155,26 @@ const JoinPage: React.FC = () => {
     setJoined(true);
   };
 
+  // Audio Auto-Play Unlocker
+  const [audioEnabled, setAudioEnabled] = useState(false);
+
+  const enableAudio = () => {
+      // Play silent sound to unlock browser audio
+      const utterance = new SpeechSynthesisUtterance("Audio enabled");
+      utterance.volume = 0.1; // quiet
+      window.speechSynthesis.speak(utterance);
+      setAudioEnabled(true);
+  };
+
   const speakText = (text: string) => {
       if (!window.speechSynthesis) return;
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      // Try to find a good English voice
+      // ... voice logic ...
       const voices = window.speechSynthesis.getVoices();
-      const preferred = voices.find(v => v.name.includes("Google US English") || v.lang === "en-US") || voices[0];
+      const preferred = voices.find(v => v.lang === "en-US") || voices[0];
       if (preferred) utterance.voice = preferred;
+      
       window.speechSynthesis.speak(utterance);
   };
 
@@ -179,6 +191,30 @@ const JoinPage: React.FC = () => {
             isCustomer={true}
             userName={name}
           />
+          
+          {/* Audio Unlock Button (Mobile Requirement) */}
+          {!audioEnabled && (
+              <button 
+                onClick={enableAudio}
+                style={{
+                    position: 'absolute',
+                    top: '20px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 9999,
+                    padding: '10px 20px',
+                    backgroundColor: '#e53e3e',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '20px',
+                    fontWeight: 'bold',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}
+              >
+                🔇 Tap to Enable AI Voice
+              </button>
+          )}
+
           {/* Invisible Audio Capture for Customer */}
           <AudioCapture 
              sessionId={session?.id} 
