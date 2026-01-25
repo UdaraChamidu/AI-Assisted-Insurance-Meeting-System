@@ -1,8 +1,81 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { apiClient } from '../services/api';
 import ZoomMeeting from '../components/agent/ZoomMeeting';
+import { wsService } from '../services/websocket';
 import './JoinPage.css';
+
+// --- Audio Capture Component ---
+const AudioCapture: React.FC<{ sessionId: string, onTranscript: (text: string) => void }> = ({ sessionId, onTranscript }) => {
+    useEffect(() => {
+        startCapture();
+        return () => stopCapture();
+    }, []);
+
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const deepgramConnectionRef = useRef<any>(null);
+
+    const startCapture = async () => {
+        try {
+            console.log('🎤 Customer Audio: Starting...');
+            const { createClient, LiveTranscriptionEvents } = await import('@deepgram/sdk');
+            const DEEPGRAM_API_KEY = import.meta.env.VITE_DEEPGRAM_API_KEY || '29fe47a51ed2f1aec2ecca0e1cd38fa1bdb457bb';
+            const deepgram = createClient(DEEPGRAM_API_KEY);
+            
+            const connection = deepgram.listen.live({
+                model: 'nova-2',
+                language: 'en-US',
+                smart_format: true,
+                punctuate: true,
+                interim_results: false,
+            });
+
+            console.log('Connecting to Deepgram...');
+            deepgramConnectionRef.current = connection;
+
+            connection.on(LiveTranscriptionEvents.Open, async () => {
+                console.log('✅ Customer Audio: Connection Open');
+                
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                    
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0 && connection.getReadyState() === 1) {
+                            connection.send(event.data);
+                        }
+                    };
+                    mediaRecorder.start(250);
+                    mediaRecorderRef.current = mediaRecorder;
+                    console.log('🎙️ Customer Mic Active');
+                } catch (err) {
+                    console.error('❌ Mic Error:', err);
+                    alert('Please allow microphone access for the AI assistant to hear you.');
+                }
+            });
+
+            connection.on(LiveTranscriptionEvents.Transcript, (data) => {
+                const transcript = data.channel?.alternatives?.[0]?.transcript;
+                if (transcript && data.is_final) {
+                    onTranscript(transcript);
+                }
+            });
+        } catch (err) {
+            console.error('Deepgram Init Error:', err);
+        }
+    };
+
+    const stopCapture = () => {
+         if (mediaRecorderRef.current) {
+             mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop());
+         }
+         if (deepgramConnectionRef.current) {
+             deepgramConnectionRef.current.finish();
+         }
+    };
+
+    return null; // Invisible component
+};
 
 const JoinPage: React.FC = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -66,6 +139,12 @@ const JoinPage: React.FC = () => {
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
+    
+    // Connect WS
+    if (sessionId) {
+        wsService.connect(sessionId, 'customer');
+    }
+    
     setJoined(true);
   };
 
@@ -81,6 +160,19 @@ const JoinPage: React.FC = () => {
             password={session?.zoom_meeting_password}
             isCustomer={true}
             userName={name}
+          />
+          {/* Invisible Audio Capture for Customer */}
+          <AudioCapture 
+             sessionId={session?.id} 
+             onTranscript={(text) => {
+                 console.log("🗣️ Customer said:", text);
+                 // Broadcast to Agent
+                 wsService.send('transcription.new', {
+                    text: text,
+                    speaker: 'customer',
+                    confidence: 0.99
+                 });
+             }}
           />
         </div>
       ) : (

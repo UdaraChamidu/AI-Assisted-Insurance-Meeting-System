@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { apiClient } from '../services/api';
-// import { wsService } from '../services/websocket';
+import { wsService } from '../services/websocket';
 import ZoomMeeting from '../components/agent/ZoomMeeting';
 import LiveTranscription from '../components/agent/LiveTranscription';
 import AISuggestions from '../components/agent/AISuggestions';
@@ -18,13 +18,45 @@ const AgentAssistPage: React.FC = () => {
     if (!sessionId) return;
 
     loadSession();
-    // WebSocket disabled - using client-side Deepgram SDK for transcription
-    // connectWebSocket();
+    
+    // Connect to WebSocket for syncing with customer
+    // The Agent is "staff"
+    // wsService.connect(sessionId, 'staff');
+
+    // For now, let's keep the WebSocket simpler or ensure it doesn't conflict
+    // If we want to SYNC the text, we need it.
+    wsService.connect(sessionId, 'staff');
+
+    // Subscribe to incoming transcripts (from customer)
+    wsService.on('transcription.new', (data) => {
+        console.log('📨 Received remote transcript:', data);
+        // Only add if it's NOT from us (speaker check is handled below usually, but let's be safe)
+        if (data.data && data.data.speaker === 'customer') {
+             setTranscripts((prev) => [...prev, {
+                text: data.data.text,
+                speaker: 'customer',
+                timestamp: data.timestamp || new Date().toISOString(),
+                confidence: data.data.confidence || 1.0
+              }]);
+              
+              // Also trigger AI for customer speech
+              triggerAIReferences(data.data.text);
+        }
+    });
 
     return () => {
-      // wsService.disconnect();
+      wsService.disconnect();
     };
   }, [sessionId]);
+
+  const triggerAIReferences = (text: string) => {
+      apiClient.chatAI(text, sessionId)
+            .then(aiRes => {
+                setAIResponse(aiRes);
+                // TTS logic if needed
+            })
+            .catch(err => console.error(err));
+  };
 
   const loadSession = async () => {
     try {
@@ -116,35 +148,23 @@ const AgentAssistPage: React.FC = () => {
           
           setTranscripts((prev) => [...prev, {
             text: transcript,
-            speaker: 'customer',
+            speaker: 'staff', // Agent is always staff locally
             timestamp: new Date().toISOString(),
             confidence: data.channel.alternatives[0].confidence
           }]);
 
+          // Broadcast to customer
+          wsService.send('transcription.new', {
+              text: transcript,
+              speaker: 'staff',
+              confidence: data.channel.alternatives[0].confidence
+          });
+
           // Trigger AI Suggestion for customer queries
-          console.log('🤖 Triggering AI for:', transcript);
-          apiClient.chatAI(transcript, sessionId)
-            .then(aiRes => {
-                console.log('💡 AI Response:', aiRes);
-                setAIResponse(aiRes);
-                
-                // --- BROWSER TTS (Simple Mode) ---
-                if (window.speechSynthesis) {
-                    window.speechSynthesis.cancel(); // Stop talking if already talking
-                    const utterance = new SpeechSynthesisUtterance(aiRes.answer);
-                    // Try to pick a female voice if available for "Assistant" feel
-                    const voices = window.speechSynthesis.getVoices();
-                    const preferredVoice = voices.find(v => v.name.includes("Google US English") || v.name.includes("Samantha")) || voices[0];
-                    if (preferredVoice) utterance.voice = preferredVoice;
-                    
-                    utterance.rate = 1.0;
-                    utterance.pitch = 1.0;
-                    window.speechSynthesis.speak(utterance);
-                }
-            })
-            .catch(err => {
-                console.error('❌ AI Suggestion failed:', err);
-            });
+          // Only trigger for CUSTOMER speech (which we receive via WS now), 
+          // OR if we want to debug, we can trigger for staff too. 
+          // But strict requirement is: "Customer speaks -> AI suggests".
+          // So typically we DON'T trigger AI here for Staff speech.
         }
       });
       
