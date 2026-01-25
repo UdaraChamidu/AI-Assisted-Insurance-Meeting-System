@@ -190,16 +190,24 @@ const JoinPage: React.FC = () => {
   };
 
   function handleJoin(event: FormEvent<HTMLFormElement>): void {
-    throw new Error('Function not implemented.');
+    event.preventDefault();
+    if (name.trim()) {
+      setJoined(true);
+    }
   }
 
-  // ... (render)
+  if (loading) return <div className="join-page"><div className="loading">Loading meeting details...</div></div>;
+  if (error) return <div className="join-page"><div className="error">{error}</div></div>;
 
   return (
     <div className="join-page">
       {joined ? (
         <div className="zoom-container">
-          <ZoomMeeting meetingId={session?.zoomMeetingId}             // ...
+          <ZoomMeeting 
+            meetingId={session?.zoom_meeting_id} 
+            password={session?.zoom_meeting_password}
+            userName={name}
+            isCustomer={true}
           />
           
           {/* Debug Overlay */}
