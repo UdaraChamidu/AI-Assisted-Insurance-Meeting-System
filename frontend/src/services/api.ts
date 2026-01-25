@@ -197,6 +197,13 @@ class APIClient {
       body: JSON.stringify({ query, session_id: sessionId }),
     });
   }
+
+  async chatAI(query: string, sessionId?: string): Promise<AIResponse> {
+    return this.request('/api/ai/chat', { // Use simple chat endpoint
+      method: 'POST',
+      body: JSON.stringify({ query, session_id: sessionId }),
+    });
+  }
 }
 
 export const apiClient = new APIClient();

@@ -146,6 +146,17 @@ const AgentAssistPage: React.FC = () => {
             timestamp: new Date().toISOString(),
             confidence: data.channel.alternatives[0].confidence
           }]);
+
+          // Trigger AI Suggestion for customer queries
+          console.log('🤖 Triggering AI for:', transcript);
+          apiClient.chatAI(transcript, sessionId)
+            .then(aiRes => {
+                console.log('💡 AI Response:', aiRes);
+                setAIResponse(aiRes);
+            })
+            .catch(err => {
+                console.error('❌ AI Suggestion failed:', err);
+            });
         }
       });
       
@@ -196,13 +207,10 @@ const AgentAssistPage: React.FC = () => {
       {/* 1. Zoom Column (20%) */}
       <div className="col-zoom">
         <div className="panel full-height">
-            {/* <ZoomMeeting
+            <ZoomMeeting
               meetingId={session.zoom_meeting_id}
               password={session.zoom_meeting_password}
-            /> */}
-            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'white', background: '#222'}}>
-                <h3>🎥 Zoom Component Disabled</h3>
-            </div>
+            />
         </div>
       </div>
 

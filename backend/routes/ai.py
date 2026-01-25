@@ -67,3 +67,34 @@ async def get_context(query: str, top_k: int = 5):
     except Exception as e:
         logger.error(f"Context retrieval failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/chat", response_model=AIResponse)
+async def chat_ai(request: RAGQuery):
+    """
+    Simple Chat with AI (No RAG).
+    Direct LLM interaction for simple queries.
+    """
+    try:
+        logger.info(f"AI chat query: {request.query[:100]}")
+        
+        # Generate AI response with EMPTY context
+        ai_result = gemini_service.generate_response(
+            query=request.query,
+            context_chunks=[] 
+        )
+        
+        # Build response
+        response = AIResponse(
+            answer=ai_result['answer'],
+            follow_up_question=ai_result.get('follow_up_question'),
+            confidence=ai_result['confidence'],
+            rag_context=None,
+            timestamp=datetime.utcnow()
+        )
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"AI chat failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
