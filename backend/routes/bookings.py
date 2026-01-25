@@ -57,10 +57,22 @@ async def create_booking(
     3. Send confirmation SMS
     """
     try:
-        # Parse scheduled datetime
         scheduled_datetime = datetime.fromisoformat(
             f"{booking_data.scheduled_date}T{booking_data.scheduled_time}"
         )
+        
+        # Verify lead_id exists if provided
+        if booking_data.lead_id:
+            try:
+                lead_uuid = uuid.UUID(booking_data.lead_id)
+                stmt = select(Lead).where(Lead.id == lead_uuid)
+                result = await db.execute(stmt)
+                if not result.scalar_one_or_none():
+                    logger.warning(f"Lead ID {booking_data.lead_id} not found, proceeding without linking to lead.")
+                    booking_data.lead_id = None
+            except ValueError:
+                logger.warning(f"Invalid Lead ID format {booking_data.lead_id}, proceeding without linking.")
+                booking_data.lead_id = None
         
         # Create Zoom meeting
         zoom_meeting = zoom_service.create_meeting(
