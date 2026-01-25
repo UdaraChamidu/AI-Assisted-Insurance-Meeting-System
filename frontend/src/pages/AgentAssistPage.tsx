@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { apiClient } from '../services/api';
-import { wsService } from '../services/websocket';
+// import { wsService } from '../services/websocket';
 import ZoomMeeting from '../components/agent/ZoomMeeting';
 import LiveTranscription from '../components/agent/LiveTranscription';
 import AISuggestions from '../components/agent/AISuggestions';
-import RAGContext from '../components/agent/RAGContext';
 import './AgentAssistPage.css';
 
 const AgentAssistPage: React.FC = () => {
@@ -13,7 +12,6 @@ const AgentAssistPage: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [transcripts, setTranscripts] = useState<any[]>([]);
   const [aiResponse, setAIResponse] = useState<any>(null);
-  const [ragContext, setRAGContext] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,31 +37,7 @@ const AgentAssistPage: React.FC = () => {
     }
   };
 
-  const connectWebSocket = () => {
-    // Connect as staff
-    wsService.connect(sessionId!, 'staff');
 
-    // Clear all existing handlers to prevent duplicates
-    wsService.off('transcription.new');
-    wsService.off('ai.response');
-    wsService.off('rag.context');
-
-    // Listen for transcription events
-    wsService.on('transcription.new', (event) => {
-      console.log('📝 Received transcript:', event.data);
-      setTranscripts((prev) => [...prev, event.data]);
-    });
-
-    // Listen for AI responses
-    wsService.on('ai.response', (event) => {
-      setAIResponse(event.data);
-    });
-
-    // Listen for RAG context
-    wsService.on('rag.context', (event) => {
-      setRAGContext(event.data);
-    });
-  };
 
   // Deepgram Connection Refs
   const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);

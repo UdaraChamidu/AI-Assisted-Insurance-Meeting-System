@@ -142,14 +142,7 @@ class APIClient {
     });
   }
 
-  // Helper to set auth header
-  private getAuthHeaders(): Record<string, string> {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      return { 'Authorization': `Bearer ${token}` };
-    }
-    return {};
-  }
+
 
   // Sessions
   async createSession(bookingId?: string): Promise<Session> {

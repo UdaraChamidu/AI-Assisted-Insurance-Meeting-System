@@ -116,7 +116,7 @@ const BookingPage: React.FC = () => {
           <p className="confirmation-note">
             You will receive an SMS with your meeting link shortly.
           </p>
-          <button onClick={() => window.location.href = '/'} className="btn-primary">
+          <button onClick={() => navigate('/')} className="btn-primary">
             Close
           </button>
         </div>
