@@ -99,11 +99,12 @@ async def process_customer_query(
             data={
                 'query': query,
                 'answer': ai_response['answer'],
+                'text': ai_response['answer'], # Added for frontend compatibility
                 'follow_up_question': ai_response.get('follow_up_question'),
                 'confidence': ai_response['confidence'],
                 'timestamp': datetime.utcnow().isoformat()
             },
-            staff_only=True
+            staff_only=False
         )
         
         # 5. Voice Generation (Optional / Try-Except)
