@@ -17,7 +17,7 @@ const AudioCapture: React.FC<{ sessionId: string, onTranscript: (text: string) =
 
     const startCapture = async () => {
         try {
-            console.log('🎤 Customer Audio: Starting...');
+            console.log(`🎤 Customer Audio: Starting for session ${sessionId}...`);
             const { createClient, LiveTranscriptionEvents } = await import('@deepgram/sdk');
             const DEEPGRAM_API_KEY = import.meta.env.VITE_DEEPGRAM_API_KEY || '29fe47a51ed2f1aec2ecca0e1cd38fa1bdb457bb';
             const deepgram = createClient(DEEPGRAM_API_KEY);
