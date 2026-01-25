@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import { apiClient } from '../services/api';
 import ZoomMeeting from '../components/agent/ZoomMeeting';
@@ -136,86 +136,105 @@ const JoinPage: React.FC = () => {
     }
   };
 
-  const handleJoin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name) return;
-    
-    // Connect WS and Listen for AI
-    if (sessionId) {
+  // Debug State
+  const [logs, setLogs] = useState<string[]>([]);
+  const addLog = (msg: string) => setLogs(prev => [msg, ...prev].slice(0, 5));
+
+  // Connect WS
+  useEffect(() => {
+     if (sessionId && joined) {
+        addLog("Connecting WS...");
         wsService.connect(sessionId, 'customer');
         
+        wsService.on('connection.established', () => addLog("✅ WS Connected!"));
+        
         wsService.on('ai.response', (data) => {
-            console.log("🤖 Received AI Audio:", data);
+            addLog(`🤖 AI Data: ${JSON.stringify(data).substring(0, 50)}...`);
             if (data.data && data.data.text) {
                 speakText(data.data.text);
+            } else {
+                addLog("❌ No text in AI response");
             }
         });
-    }
-    
-    setJoined(true);
-  };
+     }
+  }, [sessionId, joined]);
 
-  // Audio Auto-Play Unlocker
   const [audioEnabled, setAudioEnabled] = useState(false);
 
   const enableAudio = () => {
-      // Play silent sound to unlock browser audio
-      const utterance = new SpeechSynthesisUtterance("Audio enabled");
-      utterance.volume = 0.1; // quiet
+      addLog("🔊 Unlocking Audio...");
+      const utterance = new SpeechSynthesisUtterance("Audio active");
+      utterance.onstart = () => addLog("▶️ Unlock Started");
+      utterance.onend = () => addLog("⏹️ Unlock Finished");
       window.speechSynthesis.speak(utterance);
       setAudioEnabled(true);
   };
 
   const speakText = (text: string) => {
-      if (!window.speechSynthesis) return;
+      addLog(`🗣️ Speaking: ${text.substring(0, 20)}...`);
+      if (!window.speechSynthesis) {
+          addLog("❌ TTS Not Supported");
+          return;
+      }
+      
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      // ... voice logic ...
-      const voices = window.speechSynthesis.getVoices();
-      const preferred = voices.find(v => v.lang === "en-US") || voices[0];
-      if (preferred) utterance.voice = preferred;
+      utterance.onstart = () => addLog("▶️ TTS Started");
+      utterance.onend = () => addLog("⏹️ TTS Finished");
+      utterance.onerror = (e) => addLog(`❌ TTS Error: ${e.error}`);
+      
+      // Simple voice selection (sometimes selection breaks mobile)
+      // We will try default first.
       
       window.speechSynthesis.speak(utterance);
   };
 
-  if (loading) return <div className="join-loading">Loading meeting details...</div>;
-  if (error) return <div className="join-error">{error}</div>;
+  function handleJoin(event: FormEvent<HTMLFormElement>): void {
+    throw new Error('Function not implemented.');
+  }
+
+  // ... (render)
 
   return (
     <div className="join-page">
       {joined ? (
         <div className="zoom-container">
-          <ZoomMeeting
-            meetingId={session?.zoom_meeting_id}
-            password={session?.zoom_meeting_password}
-            isCustomer={true}
-            userName={name}
+          <ZoomMeeting meetingId={session?.zoomMeetingId}             // ...
           />
           
-          {/* Audio Unlock Button (Mobile Requirement) */}
-          {!audioEnabled && (
-              <button 
-                onClick={enableAudio}
-                style={{
-                    position: 'absolute',
-                    top: '20px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    zIndex: 9999,
-                    padding: '10px 20px',
-                    backgroundColor: '#e53e3e',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '20px',
-                    fontWeight: 'bold',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                }}
-              >
-                🔇 Tap to Enable AI Voice
-              </button>
-          )}
+          {/* Debug Overlay */}
+          <div style={{
+              position: 'absolute',
+              bottom: '100px',
+              left: '10px',
+              right: '10px',
+              background: 'rgba(0,0,0,0.7)',
+              color: '#0f0',
+              fontSize: '10px',
+              padding: '5px',
+              pointerEvents: 'none',
+              zIndex: 9999
+          }}>
+              {logs.map((L, i) => <div key={i}>{L}</div>)}
+          </div>
 
-          {/* Invisible Audio Capture for Customer */}
+          {!audioEnabled && (
+            <button 
+              onClick={enableAudio} 
+              className="join-button"
+              style={{ 
+                position: 'absolute', 
+                bottom: '20px', 
+                left: '50%', 
+                transform: 'translateX(-50%)', 
+                zIndex: 100, 
+                width: 'auto',
+                padding: '10px 20px'
+              }}
+            >
+              🔊 Enable Audio
+            </button>
+          )}
           <AudioCapture 
              sessionId={session?.id} 
              onTranscript={(text) => {
