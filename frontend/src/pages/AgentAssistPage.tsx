@@ -153,6 +153,20 @@ const AgentAssistPage: React.FC = () => {
             .then(aiRes => {
                 console.log('💡 AI Response:', aiRes);
                 setAIResponse(aiRes);
+                
+                // --- BROWSER TTS (Simple Mode) ---
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel(); // Stop talking if already talking
+                    const utterance = new SpeechSynthesisUtterance(aiRes.answer);
+                    // Try to pick a female voice if available for "Assistant" feel
+                    const voices = window.speechSynthesis.getVoices();
+                    const preferredVoice = voices.find(v => v.name.includes("Google US English") || v.name.includes("Samantha")) || voices[0];
+                    if (preferredVoice) utterance.voice = preferredVoice;
+                    
+                    utterance.rate = 1.0;
+                    utterance.pitch = 1.0;
+                    window.speechSynthesis.speak(utterance);
+                }
             })
             .catch(err => {
                 console.error('❌ AI Suggestion failed:', err);
