@@ -1,31 +1,100 @@
-.zoom-meeting {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  background: #000;
+/* Dark Dashboard Theme */
+:root {
+  --bg-dark: #0f1014;
+  --bg-panel: #18191f;
+  --bg-panel-hover: #1e1f26;
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --accent-primary: #3b82f6;
+  --accent-success: #22c55e;
+  --accent-warning: #f59e0b;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(24, 25, 31, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.05);
 }
 
-.zoom-loading,
-.zoom-error {
+.zoom-meeting-wrapper {
+  background-color: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.zoom-fallback {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1b23 0%, #13141a 100%);
+  z-index: 1000;
+}
+
+.fallback-content {
   text-align: center;
+  padding: 40px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  max-width: 400px;
+}
+
+.fallback-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.fallback-content h3 {
+  color: var(--text-primary);
+  margin: 0 0 10px;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.fallback-message {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.fallback-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-retry, .btn-dismiss {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-retry {
+  background: var(--accent-primary);
   color: white;
+  border: none;
 }
 
-.zoom-error {
-  color: #f44336;
+.btn-retry:hover {
+  background: #2563eb;
 }
 
-.zoom-container {
-  width: 100%;
-  height: 100%;
+.btn-dismiss {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
 }
 
-/* Zoom Web SDK will inject its own styles */
-#meetingSDKElement {
-  width: 100%;
-  height: 100%;
+.btn-dismiss:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
 }

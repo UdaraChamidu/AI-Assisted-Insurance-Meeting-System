@@ -8,6 +8,8 @@ interface LiveTranscriptionProps {
 const LiveTranscription: React.FC<LiveTranscriptionProps> = ({ transcripts }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
+
+
   useEffect(() => {
     // Auto-scroll to bottom
     if (containerRef.current) {

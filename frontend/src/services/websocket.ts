@@ -30,6 +30,13 @@ class WebSocketService {
   private reconnectDelay = 2000;
 
   connect(sessionId: string, role: string = 'staff') {
+    // Close existing connection first to prevent duplicates
+    if (this.ws) {
+      console.log('Closing existing WebSocket connection');
+      this.ws.close();
+      this.ws = null;
+    }
+
     const url = `${config.wsUrl}/ws/${sessionId}?role=${role}`;
 
     this.ws = new WebSocket(url);
@@ -75,6 +82,7 @@ class WebSocketService {
       this.ws.close();
       this.ws = null;
     }
+    console.log('WebSocket disconnected');
   }
 
   on(eventType: WSEventType, handler: EventHandler) {
@@ -84,7 +92,13 @@ class WebSocketService {
     this.handlers.get(eventType)!.push(handler);
   }
 
-  off(eventType: WSEventType, handler: EventHandler) {
+  off(eventType: WSEventType, handler?: EventHandler) {
+    if (!handler) {
+      // If no handler provided, remove all handlers for this event type
+      this.handlers.delete(eventType);
+      return;
+    }
+    
     const handlers = this.handlers.get(eventType);
     if (handlers) {
       const index = handlers.indexOf(handler);
@@ -93,6 +107,7 @@ class WebSocketService {
       }
     }
   }
+
 
   private handleEvent(event: WSEvent) {
     const handlers = this.handlers.get(event.event_type);

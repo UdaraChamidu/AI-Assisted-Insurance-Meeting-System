@@ -1,143 +1,76 @@
-/* Main Grid Layout */
+/* SAFE MODE CSS - Flexbox Layout */
 .agent-assist-page {
-  display: grid;
-  grid-template-columns: 20% 40% 40%; /* 3 columns: Zoom (50%), AI (25%), Transcript (25%) */
-  grid-template-rows: 64px 1fr; /* Header height + Content */
-  height: 100vh;
-  width: 100vw;
-  background: #0f1014; /* Deep dark background */
+  display: flex;
+  flex-direction: row;
+  height: calc(100vh - 70px); /* Fill screen minus navbar */
+  width: 100%;
+  background: #0f1014;
+  color: #fff;
   overflow: hidden;
-  font-family: 'Inter', sans-serif;
+  position: relative;
 }
 
-/* Control Bar (Top Header area overlay or integrated) */
-/* We'll actually place the control bar inside the main grid or absolutely positioned if needed via React inline styles for now, 
-   but let's define button styles here */
+/* 1. Zoom Column (Flexible width) */
+.col-zoom {
+  flex: 1;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
 
-.control-bar {
-  grid-column: 1 / -1;
-  background: #1a1b26;
+/* 2. Transcription Column (Fixed width) */
+.col-transcript {
+  width: 350px;
+  background: #18191f;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+/* 3. AI Column (Fixed width) */
+.col-ai {
+  width: 350px;
+  background: #13141c;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+/* Panels */
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.panel-header {
+  height: 60px;
+  padding: 0 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
-  z-index: 10;
+  background: rgba(255, 255, 255, 0.05);
 }
 
-/* Columns */
-.col-zoom {
-  grid-column: 1;
-  grid-row: 2;
-  position: relative;
-  background: #000;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  overflow: hidden;
-
-}
-
-.col-ai {
-  grid-column: 2;
-  grid-row: 2;
-  background: #13141c;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  overflow: hidden;
-}
-
-.col-transcript {
-  grid-column: 3;
-  grid-row: 2;
-  background: #13141c;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* Headers for columns */
-.col-header {
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 14px;
+.panel-header h3 {
+  margin: 0;
+  font-size: 16px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
-.col-content {
+.panel-content {
   flex: 1;
   overflow-y: auto;
-  padding: 0;
+  position: relative;
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* Premium Buttons */
-.btn-control {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.4);
-  filter: brightness(1.1);
-}
-
-.btn-danger {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
-}
-
-.btn-danger:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 8px -1px rgba(239, 68, 68, 0.4);
-  filter: brightness(1.1);
-}
-
-.loading-container,
-.error-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background: #0f1014;
-  color: white;
+/* Utilities */
+.full-height {
+  height: 100%;
 }

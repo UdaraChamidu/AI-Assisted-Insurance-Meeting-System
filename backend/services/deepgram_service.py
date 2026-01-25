@@ -101,6 +101,16 @@ class DeepgramService:
         try:
             callback = self._on_transcript_callbacks.get(session_id)
             if not callback:
+                print(f"DEBUG: No callback registered for session {session_id}", flush=True)
+                return
+
+            print(f"DEBUG: Transcript event received for {session_id}", flush=True)
+            print(f"DEBUG: Result type: {type(result)}, has channel: {hasattr(result, 'channel')}", flush=True)
+
+            # Only process FINAL transcripts to avoid duplicates
+            is_final = getattr(result, 'is_final', False)
+            if not is_final:
+                print(f"DEBUG: Skipping interim result", flush=True)
                 return
 
             if result.channel and result.channel.alternatives:
@@ -112,8 +122,8 @@ class DeepgramService:
                     # Determine speaker
                     speaker = "customer" # Default
                     
-                    logging.info(f"Transcript [{session_id}]: {transcript}")
-                    print(f"DEBUG: Dispatching transcript to WebSocket: {transcript[:30]}...")
+                    logging.info(f"Transcript [{session_id}] (final={is_final}): {transcript}")
+                    print(f"DEBUG: Dispatching FINAL transcript to WebSocket: {transcript[:50]}...", flush=True)
                     
                     # Run callback on the main loop
                     if loop and callback:
@@ -121,10 +131,14 @@ class DeepgramService:
                             callback(transcript, speaker, confidence),
                             loop
                         )
+            else:
+                print(f"DEBUG: No channel or alternatives in result", flush=True)
             
         except Exception as e:
             logger.error(f"Error handling transcript event: {e}")
-            print(f"DEBUG Error handling transcript: {e}")
+            print(f"DEBUG Error handling transcript: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
 
     async def send_audio(self, session_id: str, audio_data: bytes):
         """Send audio bytes to Deepgram."""

@@ -80,30 +80,24 @@ const ZoomMeeting: React.FC<ZoomMeetingProps> = ({
   return (
     <div className="zoom-meeting-wrapper" style={{ width: '100%', height: '100vh', position: 'relative' }}>
       {error ? (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          padding: 20,
-          textAlign: 'center',
-          background: '#fff',
-          borderRadius: 8,
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-          zIndex: 2000
-        }}>
-          <h3 style={{color: 'red'}}>❌ Meeting Error</h3>
-          <p>{error}</p>
-          <button onClick={() => window.location.reload()} style={{
-            padding: '8px 16px',
-            background: '#2D8CFF',
-            color: 'white',
-            border: 'none',
-            borderRadius: 4,
-            cursor: 'pointer'
-          }}>
-            Retry
-          </button>
+        <div className="zoom-fallback">
+          <div className="fallback-content">
+            <div className="fallback-icon">📹</div>
+            <h3>Video Feed Unavailable</h3>
+            <p className="fallback-message">
+              {error.includes("Client Error") 
+                ? "Simulation Mode: Meeting ID is invalid or expired." 
+                : error}
+            </p>
+            <div className="fallback-actions">
+              <button onClick={() => window.location.reload()} className="btn-retry">
+                Retry Connection
+              </button>
+              <button onClick={() => setError('')} className="btn-dismiss">
+                Dismiss
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
 

@@ -1,54 +1,96 @@
 .live-transcription {
   height: 100%;
-  overflow-y: auto;
-  background: #1e1e1e;
-  border-radius: 8px;
-  padding: 10px;
+  display: flex;
+  flex-direction: column;
 }
 
 .no-transcripts {
-  color: #999;
+  color: #64748b;
   text-align: center;
-  padding: 20px;
+  padding: 40px;
   font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  margin: 10px;
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
 }
 
 .transcript-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
+  padding: 16px;
+  overflow-y: auto;
 }
 
 .transcript-item {
-  background: #2a2a2a;
-  padding: 10px;
-  border-radius: 6px;
-  border-left: 3px solid #667eea;
+  display: flex;
+  flex-direction: column;
+  max-width: 90%;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .transcript-item.customer {
-  border-left-color: #4caf50;
+  align-self: flex-start;
+}
+
+.transcript-item.staff {
+  align-self: flex-end;
 }
 
 .transcript-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 5px;
-  font-size: 0.85rem;
+  gap: 8px;
+  margin-bottom: 4px;
 }
 
 .speaker {
-  color: #fff;
+  font-size: 0.75rem;
   font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.customer .speaker {
+  color: #4ade80; /* Green for Customer */
+}
+
+.staff .speaker {
+  color: #60a5fa; /* Blue for Staff */
 }
 
 .timestamp {
-  color: #999;
-  font-size: 0.75rem;
+  color: #64748b;
+  font-size: 0.7rem;
 }
 
 .transcript-text {
-  color: #ddd;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.9rem;
   line-height: 1.5;
+  color: #e2e8f0;
+  position: relative;
+}
+
+.customer .transcript-text {
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-top-left-radius: 4px;
+}
+
+.staff .transcript-text {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-top-right-radius: 4px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
