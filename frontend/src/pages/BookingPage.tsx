@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import emailjs from '@emailjs/browser';
 import { apiClient } from '../services/api';
 import './BookingPage.css';
+
+// Initialize EmailJS
+emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY);
 
 const BookingPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -85,7 +89,7 @@ const BookingPage: React.FC = () => {
 
       // Create booking
       // Only include lead_id if we successfully validated it
-      await apiClient.createBooking({
+      const bookingResponse: any = await apiClient.createBooking({
         lead_id: (isValidLead && leadId) ? leadId : undefined,
         customer_name: formData.name,
         customer_email: formData.email,
@@ -94,6 +98,30 @@ const BookingPage: React.FC = () => {
         scheduled_time: formData.time,
         notes: formData.notes
       });
+
+      // Send Email via EmailJS
+      try {
+          const emailParams = {
+              customer_email: formData.email, // Required for 'To Email'
+              customer_name: formData.name,
+              meeting_time: `${new Date(formData.date).toLocaleDateString()} at ${formData.time}`,
+              join_link: `${window.location.origin}/join/${bookingResponse.session_id}`,
+              meeting_id: bookingResponse.zoom_meeting_id || 'Generating...',
+              passcode: bookingResponse.zoom_meeting_password || '123456',
+              description: formData.notes || 'Insurance Consultation',
+              reply_to: 'agent@insurance.com',
+          };
+
+          await emailjs.send(
+              import.meta.env.VITE_EMAILJS_SERVICE_ID,
+              import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+              emailParams
+          );
+          console.log('📧 Email sent successfully');
+      } catch (emailErr) {
+          console.error('❌ Failed to send email:', emailErr);
+          // Don't block the UI success state, just log it
+      }
 
       setSuccess(true);
     } catch (err: any) {

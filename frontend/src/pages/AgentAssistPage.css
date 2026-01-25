@@ -12,13 +12,14 @@
 
 /* 1. Zoom Column (Flexible width) */
 .col-zoom {
-  flex: 1;
+  flex: 1; /* Grow to fill space */
   background: #000;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   z-index: 1;
+  height: 100%; /* Ensure full height */
 }
 
 /* 2. Transcription Column (Fixed width) */

@@ -4,6 +4,7 @@ AI query API routes.
 
 from fastapi import APIRouter, HTTPException
 from models import RAGQuery, AIResponse
+from pydantic import BaseModel
 from rag.retriever import retriever_service
 from services.gemini_service import gemini_service
 from datetime import datetime
@@ -12,6 +13,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
+
+class SummaryRequest(BaseModel):
+    transcript: str
+
+@router.post("/summary")
+async def generate_summary(request: SummaryRequest):
+    """Generate a summary of the conversation."""
+    try:
+        summary = gemini_service.generate_summary(request.transcript)
+        return {"summary": summary}
+    except Exception as e:
+        logger.error(f"Summary generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/query", response_model=AIResponse)
@@ -23,10 +37,22 @@ async def query_ai(request: RAGQuery):
     try:
         logger.info(f"AI query: {request.query[:100]}")
         
+        # Route Query to Compliance Universe
+        from services.compliance_router import compliance_router
+        universe = compliance_router.determine_universe(request.query)
+        
+        filters = None
+        if universe and universe != "NONE":
+            filters = {"universe": universe}
+            logger.info(f"Applying compliance filter: {filters}")
+        else:
+            logger.info("No compliance universe matched. Searching all documents.")
+        
         # Retrieve context
         rag_result = retriever_service.retrieve(
             query=request.query,
-            top_k=request.top_k
+            top_k=request.top_k,
+            filters=filters
         )
         
         # Generate AI response

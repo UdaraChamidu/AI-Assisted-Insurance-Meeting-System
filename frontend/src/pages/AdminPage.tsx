@@ -71,7 +71,7 @@ const AdminPage: React.FC = () => {
 
       <div className="admin-content">
         <section className="admin-section">
-          <h2>📱 Send SMS to Customer</h2>
+          <h2>📱 Send Notification (SMS & Email)</h2>
           <SendSMS onSuccess={handleSMSSent} />
         </section>
 

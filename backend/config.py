@@ -55,12 +55,26 @@ class Settings(BaseSettings):
     zoom_sdk_key: str = ""
     zoom_sdk_secret: str = ""
     
+    # Email (SMTP)
+    smtp_server: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    
     # Deepgram
     deepgram_api_key: str
     
     # Google Gemini
     google_api_key: str
     gemini_model: str = "gemini-pro"
+    
+    # AI Provider
+    ai_provider: str = "openai" # gemini or openai
+    
+    # OpenAI
+    openai_api_key: Optional[str] = None
+    openai_model: str = "gpt-3.5-turbo"
     
     # Pinecone
     pinecone_api_key: str
@@ -88,4 +102,4 @@ class Settings(BaseSettings):
 
 
 # Global settings instance
-settings = Settings() # Force reload
+settings = Settings() # Force reload 11

@@ -198,6 +198,19 @@ class APIClient {
       body: JSON.stringify({ query, session_id: sessionId }),
     });
   }
+
+  async generateSummary(transcript: string): Promise<{ summary: string }> {
+    return this.request('/api/ai/summary', {
+      method: 'POST',
+      body: JSON.stringify({ transcript }),
+    });
+  }
+
+  async endSession(sessionId: string) {
+    return this.request(`/api/sessions/${sessionId}/end`, {
+      method: 'POST',
+    });
+  }
 }
 
 export const apiClient = new APIClient();

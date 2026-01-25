@@ -68,7 +68,20 @@ const Navbar: React.FC = () => {
           )}
 
           <li className="navbar-auth">
-            {isLoggedIn ? (
+            {location.pathname.startsWith('/agent/') ? (
+              <button 
+                onClick={() => {
+                   // Dispatch a custom event that AgentAssistPage can listen to, or we can use a context.
+                   // For simplicity, let's trigger a window event or just navigate?
+                   // No, we need to call the API.
+                   // Let's emit a global event "triggerEndMeeting"
+                   window.dispatchEvent(new CustomEvent('triggerEndMeeting'));
+                }} 
+                className="btn-end-meeting"
+              >
+                End Meeting
+              </button>
+            ) : isLoggedIn ? (
               <div className="user-menu">
                 <span className="user-email">{userEmail}</span>
                 <button onClick={handleLogout} className="btn-logout">

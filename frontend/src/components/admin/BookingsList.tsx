@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import './BookingsList.css';
 
 interface Booking {
@@ -8,6 +9,7 @@ interface Booking {
   scheduled_time: string;
   status: string;
   session_id?: string;
+  session_status?: string;
   zoom_meeting_id?: string;
 }
 
@@ -18,6 +20,8 @@ interface BookingsListProps {
 }
 
 const BookingsList: React.FC<BookingsListProps> = ({ bookings, onRefresh, onSendReminder }) => {
+  const navigate = useNavigate();
+
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
     return {
@@ -35,8 +39,13 @@ const BookingsList: React.FC<BookingsListProps> = ({ bookings, onRefresh, onSend
     new Date(a.scheduled_time).getTime() - new Date(b.scheduled_time).getTime()
   );
 
-  const upcomingBookings = sortedBookings.filter(b => isUpcoming(b.scheduled_time));
-  const pastBookings = sortedBookings.filter(b => !isUpcoming(b.scheduled_time));
+  // Filter out completed bookings as per user request
+  const visibleBookings = sortedBookings.filter(b => 
+      !['completed', 'expired'].includes(b.session_status || '')
+  );
+
+  const upcomingBookings = visibleBookings.filter(b => isUpcoming(b.scheduled_time));
+  const pastBookings = visibleBookings.filter(b => !isUpcoming(b.scheduled_time));
 
   if (bookings.length === 0) {
     return (
@@ -73,15 +82,31 @@ const BookingsList: React.FC<BookingsListProps> = ({ bookings, onRefresh, onSend
           )}
           {booking.session_id && (
             <>
-              <a
-                href={`/agent/${booking.session_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-join"
-                title="Join as Agent (Host)"
-              >
-                🎥 Host Meeting
-              </a>
+              {booking.session_status === 'completed' ? (
+                <button
+                  onClick={() => {
+                     console.log(`Navigating to report /agent/${booking.session_id}`);
+                     navigate(`/agent/${booking.session_id}`);
+                  }}
+                  className="btn-join btn-report"
+                  style={{ background: '#6c757d' }}
+                  title="View Meeting Report"
+                >
+                  📄 View Report
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                     console.log(`Navigating to /agent/${booking.session_id}`);
+                     navigate(`/agent/${booking.session_id}`);
+                  }}
+                  className="btn-join"
+                  title="Join as Agent (Host)"
+                >
+                  🎥 Host Meeting
+                </button>
+              )}
+              
               <button
                 className="btn-copy-link"
                 onClick={() => {
@@ -89,6 +114,7 @@ const BookingsList: React.FC<BookingsListProps> = ({ bookings, onRefresh, onSend
                   navigator.clipboard.writeText(url);
                   alert('Customer link copied to clipboard!');
                 }}
+                disabled={booking.session_status === 'completed' || booking.session_status === 'expired'}
                 title="Copy Customer Join Link"
               >
                 📋 Copy Link

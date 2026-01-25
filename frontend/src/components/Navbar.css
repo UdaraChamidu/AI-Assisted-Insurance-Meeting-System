@@ -77,11 +77,12 @@
 }
 
 .btn-login,
-.btn-logout {
+.btn-logout,
+.btn-end-meeting {
   padding: 8px 20px;
-  background: white;
-  color: #667eea;
-  border: none;
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
@@ -90,11 +91,27 @@
   display: inline-block;
 }
 
+.btn-end-meeting {
+  background: rgba(220, 53, 69, 0.8);
+  border-color: #dc3545;
+}
+
+.btn-end-meeting:hover {
+  background: #dc3545;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
 .btn-login:hover,
 .btn-logout:hover {
+  background: white;
+  color: #667eea;
+  border-color: white;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
+
 
 /* Mobile Responsive */
 @media (max-width: 768px) {

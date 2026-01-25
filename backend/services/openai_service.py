@@ -1,28 +1,27 @@
-"""
-Google Gemini service for AI response generation.
-"""
 
-import google.generativeai as genai
+from openai import OpenAI
 from config import settings
 from typing import List, Dict, Optional
 import logging
-from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
-load_dotenv(override=True)
 
-class GeminiService:
-    """Handles AI response generation using Google Gemini."""
+class OpenAIService:
+    """Handles AI response generation using OpenAI GPT."""
     
     def __init__(self):
-        genai.configure(api_key=settings.google_api_key)
-        self.model = genai.GenerativeModel(settings.gemini_model)
+        if not settings.openai_api_key or "placeholder" in settings.openai_api_key:
+            logger.warning("OpenAI API Key is missing or invalid placeholder.")
+            self.client = None
+        else:
+            self.client = OpenAI(api_key=settings.openai_api_key)
+        
+        self.model = settings.openai_model
         
         # System prompt for insurance assistant
         self.system_prompt = """You are a helpful and professional AI insurance assistant.
 
 Your role:
-- polite in user friendly manner
 - Answer customer questions clearly and continuously
 - You can use your general knowledge to explain insurance concepts, terms, and general practices
 - Be polite, empathetic, and professional
@@ -35,9 +34,12 @@ FOLLOW_UP: [suggested follow-up question]
 CONFIDENCE: [LOW/MEDIUM/HIGH]
 
 Rules:
-- If you are completely unsure, politely say so
+- If context is provided, prioritize it.
+- If NO context is provided (empty), you MUST answer using your general insurance knowledge.
+- Explain terms and concepts helpfully.
 - Do not make up specific policy details (like exact prices) unless explicitly provided
 - Focus on being a helpful guide
+- IMPORTANT: Do not say "I cannot answer" just because documents are missing. Be a general chatbot.
 """
     
     def generate_response(
@@ -47,27 +49,24 @@ Rules:
         conversation_history: Optional[List[str]] = None
     ) -> Dict[str, any]:
         """
-        Generate AI response based on query and RAG context.
-        
-        Args:
-            query: Customer's question
-            context_chunks: Retrieved context from Pinecone
-            conversation_history: Optional previous conversation
-        
-        Returns:
-            Dict with answer, follow_up, and confidence
+        Generate AI response based on query and RAG context using OpenAI.
         """
         try:
+            if not self.client:
+                raise ValueError("OpenAI API Key not configured.")
+
             # Build context from chunks
             context_text = "\n\n".join([
                 f"Source: {chunk.get('metadata', {}).get('source', 'Unknown')}\n{chunk.get('text', '')}"
                 for chunk in context_chunks
             ])
             
-            # Build prompt
-            prompt = f"""{self.system_prompt}
-
-CONTEXT FROM INSURANCE DOCUMENTS:
+            # Build messages
+            messages = [
+                {"role": "system", "content": self.system_prompt},
+            ]
+            
+            user_content = f"""CONTEXT FROM INSURANCE DOCUMENTS:
 {context_text}
 
 CUSTOMER QUESTION:
@@ -75,15 +74,22 @@ CUSTOMER QUESTION:
 
 Provide your response following the exact format specified above.
 """
-            
+
             # Add conversation history if available
             if conversation_history:
-                history_text = "\n".join(conversation_history[-5:])  # Last 5 exchanges
-                prompt += f"\n\nRECENT CONVERSATION:\n{history_text}\n"
+                history_text = "\n".join(conversation_history[-5:])
+                user_content += f"\n\nRECENT CONVERSATION:\n{history_text}\n"
+
+            messages.append({"role": "user", "content": user_content})
             
             # Generate response
-            response = self.model.generate_content(prompt)
-            response_text = response.text
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0.7
+            )
+            
+            response_text = response.choices[0].message.content
             
             # Parse response
             answer = ""
@@ -106,7 +112,7 @@ Provide your response following the exact format specified above.
             confidence_map = {"LOW": 0.5, "MEDIUM": 0.75, "HIGH": 0.95}
             confidence_score = confidence_map.get(confidence, 0.75)
             
-            logger.info(f"Generated AI response for query: {query[:50]}...")
+            logger.info(f"Generated OpenAI response for query: {query[:50]}...")
             
             return {
                 'answer': answer,
@@ -116,7 +122,7 @@ Provide your response following the exact format specified above.
             }
             
         except Exception as e:
-            logger.error(f"Failed to generate AI response: {str(e)}")
+            logger.error(f"Failed to generate OpenAI response: {str(e)}")
             return {
                 'answer': f"I'm having trouble processing that question right now. Error details: {str(e)}",
                 'follow_up_question': "What specific aspect of insurance coverage are you interested in?",
@@ -130,14 +136,11 @@ Provide your response following the exact format specified above.
     ) -> str:
         """
         Generate a summary of the conversation.
-        
-        Args:
-            conversation_transcript: Full conversation text
-        
-        Returns:
-            Summary text
         """
         try:
+            if not self.client:
+                return "OpenAI not configured."
+
             prompt = f"""Summarize the following insurance consultation conversation. 
 Include key topics discussed, customer concerns, and any action items.
 
@@ -146,8 +149,13 @@ CONVERSATION:
 
 Provide a concise summary in 3-5 bullet points."""
             
-            response = self.model.generate_content(prompt)
-            return response.text
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            return response.choices[0].message.content
             
         except Exception as e:
             logger.error(f"Failed to generate summary: {str(e)}")
@@ -156,28 +164,13 @@ Provide a concise summary in 3-5 bullet points."""
     def complete(self, prompt: str) -> str:
         """Raw completion for utility tasks."""
         try:
-            response = self.model.generate_content(prompt)
-            return response.text.strip()
+            if not self.client:
+                return ""
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.0
+            )
+            return response.choices[0].message.content.strip()
         except Exception:
             return ""
-
-
-# Global service instance logic
-if settings.ai_provider == "openai":
-    try:
-        from services.openai_service import OpenAIService
-        logger.info("Using OpenAI Service Provider")
-        print("DEBUG: Initializing OpenAI Service...")
-        gemini_service = OpenAIService()
-        print("DEBUG: OpenAI Service Initialized.")
-    except Exception as e:
-        logger.error(f"Failed to initialize OpenAI Service: {e}")
-        print(f"DEBUG: Failed to initialize OpenAI Service: {e}")
-        # Fallback to Gemini
-        print("DEBUG: Falling back to Gemini...")
-        gemini_service = GeminiService()
-else:
-    logger.info("Using Gemini Service Provider")
-    print(f"DEBUG: Using Gemini Service Provider (Config: {settings.ai_provider})")
-    gemini_service = GeminiService()
-

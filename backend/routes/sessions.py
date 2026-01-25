@@ -80,3 +80,37 @@ async def get_session(session_id: str, db: AsyncSession = Depends(get_db)):
         logger.error(f"Failed to get session: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/{session_id}/end")
+async def end_session(session_id: str, db: AsyncSession = Depends(get_db)):
+    """End a session and notify participants."""
+    try:
+        query = select(Session).where(Session.id == uuid.UUID(session_id))
+        result = await db.execute(query)
+        session = result.scalar_one_or_none()
+        
+        if not session:
+            # If session not found in DB, just try to broadcast anyway if it's an ephemeral one
+            logger.warning(f"Session {session_id} not found in DB during end request.")
+        else:
+            session.status = SessionStatus.COMPLETED
+            await db.commit()
+            
+        # Broadcast event to all connected clients
+        try:
+            from websocket.manager import connection_manager
+            await connection_manager.broadcast_event(session_id, "meeting.ended", {
+                "timestamp": datetime.utcnow().isoformat()
+            })
+        except Exception as ws_error:
+            # Don't fail the request if just the broadcast fails
+            logger.error(f"Failed to broadcast meeting ended event: {ws_error}")
+        
+        return {"message": "Session ended successfully"}
+        
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid session ID format")
+    except Exception as e:
+        logger.error(f"Failed to end session: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+

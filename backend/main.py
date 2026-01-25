@@ -39,6 +39,11 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database initialized")
     
+    # Start Background Scheduler for RAG Pipeline
+    from services.scheduler import scheduler_service
+    scheduler_service.start()
+    logger.info("RAG Scheduler started")
+    
     yield
     
     # Shutdown

@@ -11,7 +11,8 @@ export type WSEventType =
   | 'ai.processing'
   | 'rag.context'
   | 'session.participant_joined'
-  | 'session.participant_left';
+  | 'session.participant_left'
+  | 'meeting.ended';
 
 export interface WSEvent {
   event_type: WSEventType;

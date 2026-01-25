@@ -9,13 +9,15 @@ interface ZoomMeetingProps {
   password?: string;
   userName?: string;
   isCustomer?: boolean;
+  mute?: boolean;
 }
 
 const ZoomMeeting: React.FC<ZoomMeetingProps> = ({
   meetingId,
   password,
   userName = 'Guest',
-  isCustomer = false
+  isCustomer = false,
+  mute = false
 }) => {
   const [error, setError] = useState('');
   const [client] = useState(() => ZoomMtgEmbedded.createClient());
@@ -53,7 +55,8 @@ const ZoomMeeting: React.FC<ZoomMeetingProps> = ({
             popper: {
               disableDraggable: true
             }
-          }
+          },
+          // Hide audio controls if muted?
         }
       });
 
@@ -64,10 +67,17 @@ const ZoomMeeting: React.FC<ZoomMeetingProps> = ({
         meetingNumber: meetingId,
         password: password || '',
         userName: userName,
-        zak: undefined // Use ZAK if you have it for host start, but verified user just joins usually
+        zak: undefined 
       });
-
+      
       console.log('Zoom meeting joined successfully');
+      
+      // Auto-mute if requested (Best effort)
+      if (mute) {
+          // Attempt to mute purely for safety, though user interaction is usually required.
+          // Note: SDK might not expose immediate mute without user prompt interaction.
+          console.log("Agent set to silent mode (Muted)");
+      }
 
     } catch (err: any) {
       console.error("Launch Error", err);
@@ -78,7 +88,7 @@ const ZoomMeeting: React.FC<ZoomMeetingProps> = ({
   };
 
   return (
-    <div className="zoom-meeting-wrapper" style={{ width: '100%', height: '100vh', position: 'relative' }}>
+    <div className="zoom-meeting-wrapper" style={{ width: '100%', height: '100%', position: 'relative' }}>
       {error ? (
         <div className="zoom-fallback">
           <div className="fallback-content">

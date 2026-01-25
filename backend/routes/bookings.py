@@ -40,7 +40,9 @@ class BookingResponse(BaseModel):
     scheduled_time: str
     status: str
     session_id: Optional[str] = None
+    session_status: Optional[str] = None
     zoom_meeting_id: Optional[str] = None
+    zoom_meeting_password: Optional[str] = None
 
 
 # ==================== ROUTES ====================
@@ -146,6 +148,10 @@ async def create_booking(
         
         if not sms_result.success:
             logger.warning(f"Failed to send confirmation SMS: {sms_result.error}")
+            
+        # Send confirmation Email - MOVED TO FRONTEND (EmailJS)
+        # We no longer send email from backend to avoid SMTP issues.
+        # The frontend uses bookingResponse to trigger EmailJS.
         
         logger.info(f"Booking created: {booking_id}, Session: {session_id}, Zoom: {zoom_meeting['meeting_id']}")
         
@@ -156,7 +162,8 @@ async def create_booking(
             scheduled_time=scheduled_datetime.isoformat(),
             status=new_booking.status.value,
             session_id=str(session_id),
-            zoom_meeting_id=str(zoom_meeting['meeting_id'])
+            zoom_meeting_id=str(zoom_meeting['meeting_id']),
+            zoom_meeting_password=str(zoom_meeting.get('meeting_password', ''))
         )
         
     except Exception as e:
@@ -172,10 +179,14 @@ async def create_booking(
 async def list_bookings(db: AsyncSession = Depends(get_db)):
     """List all bookings."""
     try:
-        result = await db.execute(
-            select(Booking).order_by(Booking.scheduled_time.desc())
+        # Join Booking with Session to get session status
+        stmt = (
+            select(Booking, Session)
+            .outerjoin(Session, Booking.session_id == Session.id)
+            .order_by(Booking.scheduled_time.desc())
         )
-        bookings = result.scalars().all()
+        result = await db.execute(stmt)
+        rows = result.all()
         
         return [
             BookingResponse(
@@ -185,9 +196,10 @@ async def list_bookings(db: AsyncSession = Depends(get_db)):
                 scheduled_time=booking.scheduled_time.isoformat(),
                 status=booking.status.value,
                 session_id=str(booking.session_id) if booking.session_id else None,
-                zoom_meeting_id=None  # Would need to join with Session
+                session_status=session.status.value if session else None,
+                zoom_meeting_id=None
             )
-            for booking in bookings
+            for booking, session in rows
         ]
     except Exception as e:
         logger.error(f"Failed to list bookings: {str(e)}")

@@ -5,6 +5,7 @@ import { wsService } from '../services/websocket';
 import ZoomMeeting from '../components/agent/ZoomMeeting';
 import LiveTranscription from '../components/agent/LiveTranscription';
 import AISuggestions from '../components/agent/AISuggestions';
+import MeetingReport from '../components/agent/MeetingReport'; // Import Report Component
 import './AgentAssistPage.css';
 
 const AgentAssistPage: React.FC = () => {
@@ -13,21 +14,18 @@ const AgentAssistPage: React.FC = () => {
   const [transcripts, setTranscripts] = useState<any[]>([]);
   const [aiResponse, setAIResponse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  
+  // New State for Meeting Status
+  const [meetingStatus, setMeetingStatus] = useState<'active' | 'ended'>('active');
+  const [summary, setSummary] = useState<string>('');
 
   useEffect(() => {
     if (!sessionId) return;
 
     loadSession();
-    
-    // Connect to WebSocket for syncing with customer
-    // The Agent is "staff"
-    // wsService.connect(sessionId, 'staff');
-
-    // For now, let's keep the WebSocket simpler or ensure it doesn't conflict
-    // If we want to SYNC the text, we need it.
     wsService.connect(sessionId, 'staff');
 
-    // Subscribe to incoming transcripts (from customer)
+    // Subscribe to events
     const handleRemoteTranscript = (data: any) => {
         console.log('📨 Received remote transcript:', data);
         if (data.data && data.data.speaker === 'customer') {
@@ -41,174 +39,100 @@ const AgentAssistPage: React.FC = () => {
               triggerAIReferences(data.data.text);
         }
     };
+    
+    // Listen for meeting ended event
+    const handleMeetingEnded = (data: any) => {
+        console.log("🛑 Meeting ended event received", data);
+        setMeetingStatus('ended');
+        generateMeetingSummary();
+    };
 
     wsService.on('transcription.new', handleRemoteTranscript);
+    wsService.on('meeting.ended', handleMeetingEnded);
 
     return () => {
       wsService.off('transcription.new', handleRemoteTranscript);
+      wsService.off('meeting.ended', handleMeetingEnded);
       wsService.disconnect();
     };
   }, [sessionId]);
+
+  // Clean up WebSocket when meeting ends
+  useEffect(() => {
+    if (meetingStatus === 'ended') {
+      wsService.disconnect();
+    }
+  }, [meetingStatus]);
+  
+  // Listen for Navbar "End Meeting" trigger
+  useEffect(() => {
+      const handleTriggerEnd = () => {
+          if (sessionId && meetingStatus === 'active') {
+              if (window.confirm("Are you sure you want to end the meeting for everyone?")) {
+                  apiClient.endSession(sessionId)
+                      .then(() => {
+                          setMeetingStatus('ended');
+                          generateMeetingSummary();
+                      })
+                      .catch(console.error);
+              }
+          }
+      };
+      
+      window.addEventListener('triggerEndMeeting', handleTriggerEnd);
+      return () => window.removeEventListener('triggerEndMeeting', handleTriggerEnd);
+  }, [sessionId, meetingStatus]);
 
   const triggerAIReferences = (text: string) => {
       apiClient.chatAI(text, sessionId)
             .then(aiRes => {
                 setAIResponse(aiRes);
-                
-                // Broadcast AI response to Customer so they can hear it
                 wsService.send('ai.response', {
                     text: aiRes.answer,
                     speaker: 'ai'
                 });
-
-                // Agent hears it too? Maybe not, usually Agent reads it. 
-                // But let's keep local TTS disabled or optional for Agent.
-                // For now, we ONLY send to customer.
             })
             .catch(err => console.error(err));
+  };
+  
+  const generateMeetingSummary = async () => {
+      try {
+          // Combine transcripts into a single text
+          // We should ideally include Agent transcripts too if we had them. 
+          // For now, it's mostly customer + what AI said (maybe we should track AI responses too?)
+          // Let's just use what we have in `transcripts` state (Customer) + maybe AI responses? 
+          // Actually transcripts array currently only pushes customer text.
+          
+          if (transcripts.length === 0) {
+              setSummary("No transcript available to generate summary.");
+              return;
+          }
+          
+          const fullText = transcripts.map(t => `Customer: ${t.text}`).join("\n");
+          console.log("Generating summary for:", fullText.substring(0, 100) + "...");
+          
+          const res = await apiClient.generateSummary(fullText);
+          setSummary(res.summary);
+          
+      } catch (err) {
+          console.error("Failed to generate summary", err);
+          setSummary("Failed to generate summary.");
+      }
   };
 
   const loadSession = async () => {
     try {
       const data = await apiClient.getSession(sessionId!);
       setSession(data);
+      // Check if already completed?
+      if (data.status === 'completed') {
+          setMeetingStatus('ended');
+      }
     } catch (error) {
       console.error('Failed to load session:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-
-
-  // Deepgram Connection Refs
-  const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
-  const deepgramConnectionRef = React.useRef<any>(null);
-
-  const startAudioCapture = async () => {
-    try {
-      console.log('🎤 Starting Deepgram live transcription...');
-      
-      // Dynamic import Deepgram SDK
-      const { createClient, LiveTranscriptionEvents } = await import('@deepgram/sdk');
-      
-      // Get API key from env
-      const DEEPGRAM_API_KEY = import.meta.env.VITE_DEEPGRAM_API_KEY || '29fe47a51ed2f1aec2ecca0e1cd38fa1bdb457bb';
-      
-      // Create Deepgram client
-      const deepgram = createClient(DEEPGRAM_API_KEY);
-      
-      // Create live transcription connection
-      const connection = deepgram.listen.live({
-        model: 'nova-2',
-        language: 'en-US',
-        smart_format: true,
-        punctuate: true,
-        interim_results: false, // Only final results to avoid duplicates
-      });
-      
-      deepgramConnectionRef.current = connection;
-      
-      // Handle connection opened
-      connection.on(LiveTranscriptionEvents.Open, () => {
-        console.log('✅ Deepgram connection opened');
-        
-        // Start capturing microphone
-        navigator.mediaDevices.getUserMedia({ 
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-          }
-        }).then((stream) => {
-          console.log('🎤 Microphone access granted');
-          
-          const mediaRecorder = new MediaRecorder(stream, {
-            mimeType: 'audio/webm',
-          });
-          
-          mediaRecorder.ondataavailable = (event) => {
-            console.log(`📊 Audio chunk: ${event.data.size} bytes, Deepgram state: ${connection.getReadyState()}`);
-            if (event.data.size > 0 && connection.getReadyState() === 1) {
-              connection.send(event.data);
-              console.log('✅ Sent to Deepgram');
-            }
-          };
-          
-          mediaRecorder.start(250); // Send chunks every 250ms
-          mediaRecorderRef.current = mediaRecorder;
-          
-          console.log('🎙️ Recording started');
-          alert('✅ Live transcription started! Speak now.');
-        }).catch((err) => {
-          console.error('❌ Microphone error:', err);
-          alert(`Microphone error: ${err.message}`);
-        });
-      });
-      
-      // Handle transcripts
-      connection.on(LiveTranscriptionEvents.Transcript, (data) => {
-        console.log('🔔 TRANSCRIPT EVENT:', data);
-        const transcript = data.channel?.alternatives?.[0]?.transcript;
-        const isFinal = data.is_final;
-        
-        console.log(`Text: "${transcript}", isFinal: ${isFinal}`);
-        
-        if (transcript && isFinal) {
-          console.log('📝 Adding FINAL transcript:', transcript);
-          
-          setTranscripts((prev) => [...prev, {
-            text: transcript,
-            speaker: 'staff', // Agent is always staff locally
-            timestamp: new Date().toISOString(),
-            confidence: data.channel.alternatives[0].confidence
-          }]);
-
-          // Broadcast to customer
-          wsService.send('transcription.new', {
-              text: transcript,
-              speaker: 'staff',
-              confidence: data.channel.alternatives[0].confidence
-          });
-
-          // Trigger AI Suggestion for customer queries
-          // Only trigger for CUSTOMER speech (which we receive via WS now), 
-          // OR if we want to debug, we can trigger for staff too. 
-          // But strict requirement is: "Customer speaks -> AI suggests".
-          // So typically we DON'T trigger AI here for Staff speech.
-        }
-      });
-      
-      // Handle errors
-      connection.on(LiveTranscriptionEvents.Error, (error) => {
-        console.error('❌ Deepgram error:', error);
-      });
-      
-      // Handle close
-      connection.on(LiveTranscriptionEvents.Close, () => {
-        console.log('🔌 Deepgram connection closed');
-      });
-      
-    } catch (err: any) {
-      console.error('❌ Error starting transcription:', err);
-      alert(`Failed to start: ${err.message}`);
-    }
-  };
-
-  const stopAudioCapture = () => {
-    // Stop media recorder
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      mediaRecorderRef.current = null;
-    }
-    
-    // Close Deepgram connection
-    if (deepgramConnectionRef.current) {
-      deepgramConnectionRef.current.finish();
-      deepgramConnectionRef.current = null;
-    }
-    
-    console.log('⏹️ Transcription stopped');
   };
 
   if (loading) {
@@ -218,16 +142,28 @@ const AgentAssistPage: React.FC = () => {
   if (!session) {
     return <div className="error">Session not found</div>;
   }
+  
+  if (meetingStatus === 'ended') {
+      return (
+          <div className="agent-assist-page ended">
+              <MeetingReport 
+                  summary={summary} 
+                  transcript={transcripts}
+              />
+          </div>
+      );
+  }
 
   return (
     <div className="agent-assist-page">
       
-      {/* 1. Zoom Column (20%) */}
+      {/* 1. Zoom Column (Flexible) */}
       <div className="col-zoom">
         <div className="panel full-height">
             <ZoomMeeting
               meetingId={session.zoom_meeting_id}
               password={session.zoom_meeting_password}
+              mute={true}
             />
         </div>
       </div>
@@ -238,12 +174,9 @@ const AgentAssistPage: React.FC = () => {
           <div className="panel-header">
             <h3>📝 Live Transcription</h3>
             <div className="controls">
-              <button onClick={startAudioCapture} className="btn-primary">
-                Start Stream
-              </button>
-              <button onClick={stopAudioCapture} className="btn-secondary">
-                Stop Stream
-              </button>
+              <span className="status-badge status-active">
+                🎧 Receiving Customer Audio
+              </span>
             </div>
           </div>
           <div className="panel-content">
@@ -263,9 +196,6 @@ const AgentAssistPage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* 4. RAG Context Column - Hidden for now or integrated differently since grid is 3-col */}
-      {/* <div className="col-rag"> ... </div> */}
     </div>
   );
 };
