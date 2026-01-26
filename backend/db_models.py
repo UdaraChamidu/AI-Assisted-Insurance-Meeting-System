@@ -13,8 +13,8 @@ from database import Base
 
 class UserRole(str, enum.Enum):
     """User role enumeration."""
-    ADMIN = "admin"
-    AGENT = "agent"
+    ADMIN = "ADMIN"
+    AGENT = "AGENT"
 
 
 class SessionStatus(str, enum.Enum):

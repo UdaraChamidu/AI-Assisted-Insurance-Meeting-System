@@ -31,10 +31,10 @@ class SchedulerService:
             
             import os
             mode = os.getenv("INGESTION_MODE", "sharepoint")
-            local_mode = (mode == "local")
             
-            # await self.pipeline.run(local_mode=local_mode)
-            pass
+            # Run ingestion
+            from services.ingestion_service import ingestion_service
+            await ingestion_service.run_pipeline()
             
         except Exception as e:
             logger.error(f"Ingestion job failed: {e}")

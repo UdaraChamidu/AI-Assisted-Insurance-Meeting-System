@@ -106,6 +106,49 @@ class SharePointService:
             logger.error(f"Failed to list items ({resp.status_code}): {resp.text}")
             return []
 
+    def recursive_list_items(self, drive_id: str, folder_id: str = "root") -> List[Dict[str, Any]]:
+        """
+        Recursively list all files in a drive/folder.
+        """
+        headers = self._get_headers()
+        if not headers: return []
+        
+        all_items = []
+        
+        try:
+            # Handle root vs specific folder
+            if folder_id == "root":
+                url = f"{self.graph_endpoint}/drives/{drive_id}/root/children?$expand=fields"
+            else:
+                url = f"{self.graph_endpoint}/drives/{drive_id}/items/{folder_id}/children?$expand=fields"
+            
+            while url:
+                resp = requests.get(url, headers=headers)
+                if resp.status_code != 200:
+                    logger.error(f"Failed to list items recursivly ({resp.status_code}): {resp.text}")
+                    break
+                    
+                data = resp.json()
+                items = data.get('value', [])
+                
+                for item in items:
+                    # If folder, recurse
+                    if 'folder' in item:
+                        sub_items = self.recursive_list_items(drive_id, item['id'])
+                        all_items.extend(sub_items)
+                    elif 'file' in item:
+                        # Append file item
+                        all_items.append(item)
+                
+                # Pagination
+                url = data.get('@odata.nextLink')
+                
+            return all_items
+            
+        except Exception as e:
+            logger.error(f"Recursive list failed: {e}")
+            return all_items
+
     def get_file_content(self, drive_id: str, file_id: str) -> Optional[bytes]:
         """Download file content."""
         headers = self._get_headers()
@@ -118,4 +161,4 @@ class SharePointService:
         return None
 
 # Global Instance
-# sharepoint_service = SharePointService()
+sharepoint_service = SharePointService()

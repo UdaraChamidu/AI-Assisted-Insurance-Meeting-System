@@ -4,18 +4,29 @@ Database connection and session management.
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.pool import NullPool
 from config import settings
 import logging
 
 logger = logging.getLogger(__name__)
 
+import uuid
+
+# Workaround for Supabase Transaction Pooler:
+# Force unique prepared statement names even if cache is disabled (double safety)
+def _get_start_name(*args): 
+    return f"stmt_{uuid.uuid4().hex}"
+
 # Create async engine
+# using NullPool to avoid "prepared statement already exists" errors with Supabase Transaction Mode
 engine = create_async_engine(
     settings.database_url,
     echo=settings.app_debug,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20
+    poolclass=NullPool,
+    connect_args={
+        "statement_cache_size": 0,
+        "prepared_statement_name_func": _get_start_name
+    }
 )
 
 # Create session factory

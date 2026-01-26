@@ -49,10 +49,10 @@ async def query_ai(request: RAGQuery):
             logger.info("No compliance universe matched. Searching all documents.")
         
         # Retrieve context
-        rag_result = retriever_service.retrieve(
+        rag_result = await retriever_service.retrieve(
             query=request.query,
-            top_k=request.top_k,
-            filters=filters
+            universe=universe if universe != "NONE" else None,
+            top_k=request.top_k
         )
         
         # Generate AI response

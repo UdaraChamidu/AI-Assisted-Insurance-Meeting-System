@@ -17,27 +17,32 @@ class RetrieverService:
         self.embedding_service = embedding_service
         self.pinecone_client = pinecone_client
     
-    def retrieve(
+    async def retrieve(
         self,
         query: str,
+        universe: Optional[str] = None,
         top_k: int = 5,
-        min_score: float = 0.7,
-        filters: Optional[Dict[str, Any]] = None
+        min_score: float = 0.7
     ) -> Dict[str, Any]:
         """
         Retrieve relevant context for a query.
         
         Args:
             query: Search query
+            universe: Regulatory Universe to filter by (optional)
             top_k: Number of results to return
             min_score: Minimum similarity score
-            filters: Optional metadata filters
         
         Returns:
             Dict with chunks and metadata
         """
         try:
-            logger.info(f"Retrieving context for query: {query[:100]}...")
+            logger.info(f"Retrieving context for query: {query[:100]}... Universe: {universe}")
+            
+            # Construct Filter
+            filters = {}
+            if universe and universe != "NONE":
+                filters['universe'] = universe
             
             # Generate query embedding
             query_embedding = self.embedding_service.embed_query(query)
@@ -59,6 +64,7 @@ class RetrieverService:
             
             return {
                 'query': query,
+                'universe': universe,
                 'chunks': filtered_results,
                 'total_results': len(filtered_results)
             }

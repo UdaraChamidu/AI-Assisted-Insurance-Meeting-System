@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     
     # Google Gemini
     google_api_key: str
-    gemini_model: str = "gemini-pro"
+    gemini_model: str = "gemini-2.5-flash"
     
     # AI Provider
     ai_provider: str = "openai" # gemini or openai
@@ -86,7 +86,7 @@ class Settings(BaseSettings):
     elevenlabs_voice_id: Optional[str] = None
     
     # Domain
-    domain: str = "https://ourdomain.com"
+    domain: str = "https://ai-assisted-insurance-meeting-syste.vercel.app"
     
     @property
     def is_production(self) -> bool:
@@ -98,7 +98,7 @@ class Settings(BaseSettings):
         """Get CORS allowed origins."""
         if self.is_production:
             return [self.domain, self.frontend_url]
-        return ["*"]
+        return [self.frontend_url, "http://localhost:5173", "http://localhost:3000"]
 
 
 # Global settings instance
