@@ -54,7 +54,7 @@ const SendSMS: React.FC<SendSMSProps> = ({ onSuccess }) => {
       if (sendEmail) {
           if (!email) throw new Error("Email required for Email notification");
           
-          const bookingUrl = `${window.location.origin}/book?from_admin=true`; // Generic booking link
+          const bookingUrl = `${window.location.origin}/booking?from_admin=true`; // Generic booking link
           
           await emailjs.send(
               import.meta.env.VITE_EMAILJS_SERVICE_ID,
