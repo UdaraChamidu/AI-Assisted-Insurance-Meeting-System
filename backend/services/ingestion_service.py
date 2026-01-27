@@ -37,7 +37,7 @@ class IngestionService:
         self.embeddings = embedding_service
         self.pinecone = pinecone_client
         
-    async def run_pipeline(self, site_name: str = "KB-DEV"):
+    async def run_pipeline(self, site_name: str = "EliteDealBroker"):
         """Run the full ingestion pipeline."""
         logger.info(f"Starting ingestion pipeline for site: {site_name}")
         
@@ -50,11 +50,20 @@ class IngestionService:
         # 2. Get Drives
         drives = self.sharepoint.get_drives(site_id)
         target_drive = None
+        
+        # Priority: KB-DEV > Documents
         for drive in drives:
-            # Assuming the library is named 'Documents' or matches the site name
-            if drive.get('name') == "Documents": 
+            name = drive.get('name', '')
+            if name in ["KB-DEV", "KBDEV"]:
                 target_drive = drive
                 break
+        
+        if not target_drive:
+            # Fallback to Documents
+            for drive in drives:
+                if drive.get('name') == "Documents":
+                    target_drive = drive
+                    break
         
         if not target_drive:
             target_drive = drives[0] if drives else None

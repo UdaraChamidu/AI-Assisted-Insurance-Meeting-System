@@ -22,7 +22,7 @@ class RetrieverService:
         query: str,
         universe: Optional[str] = None,
         top_k: int = 5,
-        min_score: float = 0.7
+        min_score: float = 0.1
     ) -> Dict[str, Any]:
         """
         Retrieve relevant context for a query.

@@ -34,17 +34,21 @@ class PineconeClient:
             if self.index_name not in existing_indexes:
                 logger.info(f"Creating Pinecone index: {self.index_name}")
                 
+                # Dynamic dimension from embedding service
+                from rag.embeddings import embedding_service
+                dimension = embedding_service.dimension
+                
                 # Create index with serverless spec
                 self.pc.create_index(
                     name=self.index_name,
-                    dimension=768,  # Google embedding dimension
+                    dimension=dimension,
                     metric='cosine',
                     spec=ServerlessSpec(
                         cloud='aws',
                         region='us-east-1'
                     )
                 )
-                logger.info(f"Created index: {self.index_name}")
+                logger.info(f"Created index: {self.index_name} with dimension {dimension}")
             
             # Connect to index
             self.index = self.pc.Index(self.index_name)
@@ -118,12 +122,15 @@ class PineconeClient:
         """
         try:
             # Query index
-            results = self.index.query(
-                vector=query_embedding,
-                top_k=top_k,
-                include_metadata=True,
-                filter=filter_dict
-            )
+            query_args = {
+                'vector': query_embedding,
+                'top_k': top_k,
+                'include_metadata': True
+            }
+            if filter_dict:
+                query_args['filter'] = filter_dict
+                
+            results = self.index.query(**query_args)
             
             # Format results
             matches = []
@@ -172,12 +179,6 @@ def get_pinecone_client() -> Optional[PineconeClient]:
     
     if _pinecone_client_instance is None:
         try:
-            # Check if we have valid credentials
-            if (settings.pinecone_api_key.startswith("dummy_") or 
-                settings.pinecone_environment.startswith("dummy_")):
-                logger.warning("Pinecone not configured - using dummy credentials. RAG features will be disabled.")
-                return None
-            
             _pinecone_client_instance = PineconeClient()
             logger.info("Pinecone client initialized successfully")
         except Exception as e:

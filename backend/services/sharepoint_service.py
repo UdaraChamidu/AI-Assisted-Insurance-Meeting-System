@@ -81,51 +81,78 @@ class SharePointService:
             return resp.json().get('value', [])
         return []
 
+    def _safe_get_items(self, base_url: str) -> Dict[str, Any]:
+        """
+        Helper to get items with fallback for expand=fields.
+        """
+        headers = self._get_headers()
+        if not headers: return {}
+        
+        # Try with expand
+        url = f"{base_url}?$expand=fields"
+        resp = requests.get(url, headers=headers)
+        
+        if resp.status_code == 200:
+            return resp.json()
+            
+        if resp.status_code == 400:
+            # Fallback: Try without expand
+            logger.warning(f"Metadata expansion failed (400) for {base_url}. Retrying without metadata.")
+            resp = requests.get(base_url, headers=headers)
+            if resp.status_code == 200:
+                return resp.json()
+                
+        # Error
+        logger.error(f"Failed to list items ({resp.status_code}): {resp.text}")
+        return {}
+        
     def list_drive_items(self, drive_id: str, folder_path: str = None) -> List[Dict[str, Any]]:
         """
         List items in a drive folder. 
-        If folder_path is None, lists root.
         """
-        headers = self._get_headers()
-        if not headers: return []
-        
         if folder_path:
-            # List specific folder by path
             url = f"{self.graph_endpoint}/drives/{drive_id}/root:/{folder_path}:/children"
         else:
-            # List root
             url = f"{self.graph_endpoint}/drives/{drive_id}/root/children"
             
-        # Expand fields to get custom columns (Metadata)
-        url += "?$expand=fields"
-        
-        resp = requests.get(url, headers=headers)
-        if resp.status_code == 200:
-            return resp.json().get('value', [])
-        else:
-            logger.error(f"Failed to list items ({resp.status_code}): {resp.text}")
-            return []
+        data = self._safe_get_items(url)
+        return data.get('value', [])
 
     def recursive_list_items(self, drive_id: str, folder_id: str = "root") -> List[Dict[str, Any]]:
         """
         Recursively list all files in a drive/folder.
         """
-        headers = self._get_headers()
-        if not headers: return []
-        
         all_items = []
         
         try:
             # Handle root vs specific folder
             if folder_id == "root":
-                url = f"{self.graph_endpoint}/drives/{drive_id}/root/children?$expand=fields"
+                url = f"{self.graph_endpoint}/drives/{drive_id}/root/children"
             else:
-                url = f"{self.graph_endpoint}/drives/{drive_id}/items/{folder_id}/children?$expand=fields"
+                url = f"{self.graph_endpoint}/drives/{drive_id}/items/{folder_id}/children"
             
-            while url:
-                resp = requests.get(url, headers=headers)
+            # Helper logic for pagination + recursion
+            # Note: _safe_get_items doesn't handle pagination loop easily, so we implement logic here
+            
+            # Initial fetch (try with expand)
+            current_url = url + "?$expand=fields"
+            fallback_mode = False
+            
+            while current_url:
+                headers = self._get_headers()
+                if not headers: break
+                
+                resp = requests.get(current_url, headers=headers)
+                
+                # Handle Fallback for 400
+                if resp.status_code == 400 and not fallback_mode:
+                    logger.warning("Switching to no-metadata mode due to 400 error.")
+                    fallback_mode = True
+                    current_url = url # Reset to base
+                    continue
+
                 if resp.status_code != 200:
-                    logger.error(f"Failed to list items recursivly ({resp.status_code}): {resp.text}")
+                    logger.error(f"Failed to list items ({resp.status_code}): {resp.text}")
                     break
                     
                 data = resp.json()
@@ -137,11 +164,12 @@ class SharePointService:
                         sub_items = self.recursive_list_items(drive_id, item['id'])
                         all_items.extend(sub_items)
                     elif 'file' in item:
-                        # Append file item
                         all_items.append(item)
                 
                 # Pagination
-                url = data.get('@odata.nextLink')
+                current_url = data.get('@odata.nextLink')
+                # If fallback mode is on, nextLink usually comes correct (without expand? or we might need to strip it?)
+                # Graph API nextLink usually preserves query params.
                 
             return all_items
             

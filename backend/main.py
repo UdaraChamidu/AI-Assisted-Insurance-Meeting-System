@@ -18,7 +18,7 @@ from middleware.rate_limiter import setup_rate_limiting, limiter
 import logging
 
 # Import routers
-from routes import sessions, zoom, leads, ai, auth, twilio_webhooks, bookings
+from routes import sessions, zoom, leads, ai, auth, twilio_webhooks, bookings, rag
 
 # Configure logging
 logging.basicConfig(
@@ -83,6 +83,7 @@ app.include_router(sessions.router)
 app.include_router(zoom.router)
 app.include_router(leads.router)
 app.include_router(ai.router)
+app.include_router(rag.router)
 
 @app.get("/")
 @limiter.limit("20/minute")
