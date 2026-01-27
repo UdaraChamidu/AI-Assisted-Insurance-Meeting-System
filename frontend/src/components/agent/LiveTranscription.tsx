@@ -31,7 +31,10 @@ const LiveTranscription: React.FC<LiveTranscriptionProps> = ({ transcripts }) =>
           {transcripts.map((transcript, index) => (
             <div key={index} className={`transcript-item ${transcript.speaker}`}>
               <div className="transcript-header">
-                <span className="speaker">{transcript.speaker === 'customer' ? '👤 Customer' : '👨‍💼 Staff'}</span>
+                <span className="speaker">
+                  {transcript.speaker === 'customer' ? '👤 Customer' : 
+                   transcript.speaker === 'ai' ? '🤖 AI Assistant' : '👨‍💼 Staff'}
+                </span>
                 <span className="timestamp">{formatTime(transcript.timestamp)}</span>
               </div>
               <div className="transcript-text">{transcript.text}</div>

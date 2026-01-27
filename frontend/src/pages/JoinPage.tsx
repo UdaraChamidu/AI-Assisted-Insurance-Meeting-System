@@ -89,7 +89,7 @@ const JoinPage: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const slides = [
     {
-      title: "Welcome to InsuranceAI",
+      title: "Welcome to Elite Deal Broker",
       subtitle: "Your trusted partner in future security",
       color: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" 
     },
@@ -175,22 +175,20 @@ const JoinPage: React.FC = () => {
   };
 
   const speakText = (text: string) => {
-      addLog(`🗣️ Speaking: ${text.substring(0, 20)}...`);
-      if (!window.speechSynthesis) {
-          addLog("❌ TTS Not Supported");
-          return;
-      }
+      // User requested to disable TTS
+      // addLog(`🗣️ Speaking: ${text.substring(0, 20)}...`);
+      // if (!window.speechSynthesis) {
+      //     addLog("❌ TTS Not Supported");
+      //     return;
+      // }
       
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.onstart = () => addLog("▶️ TTS Started");
-      utterance.onend = () => addLog("⏹️ TTS Finished");
-      utterance.onerror = (e) => addLog(`❌ TTS Error: ${e.error}`);
+      // window.speechSynthesis.cancel();
+      // const utterance = new SpeechSynthesisUtterance(text);
+      // utterance.onstart = () => addLog("▶️ TTS Started");
+      // utterance.onend = () => addLog("⏹️ TTS Finished");
+      // utterance.onerror = (e) => addLog(`❌ TTS Error: ${e.error}`);
       
-      // Simple voice selection (sometimes selection breaks mobile)
-      // We will try default first.
-      
-      window.speechSynthesis.speak(utterance);
+      // window.speechSynthesis.speak(utterance);
   };
 
   function handleJoin(event: FormEvent<HTMLFormElement>): void {

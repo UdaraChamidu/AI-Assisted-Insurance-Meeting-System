@@ -64,6 +64,18 @@
   color: #60a5fa; /* Blue for Staff */
 }
 
+.ai .speaker {
+  color: #a78bfa; /* Purple for AI */
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.transcript-item.ai {
+  align-self: flex-start;
+  margin-left: 20px; /* Indent AI slightly */
+}
+
 .timestamp {
   color: #64748b;
   font-size: 0.7rem;
@@ -88,6 +100,12 @@
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.2);
   border-top-right-radius: 4px;
+}
+
+.ai .transcript-text {
+  background: rgba(167, 139, 250, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.2);
+  border-top-left-radius: 4px;
 }
 
 @keyframes fadeIn {

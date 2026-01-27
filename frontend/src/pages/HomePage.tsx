@@ -113,8 +113,8 @@ const HomePage: React.FC = () => {
       <footer className="footer">
         <div className="footer-content">
           <div className="footer-section">
-            <h4>InsuranceAI</h4>
-            <p>AI-powered insurance consultations</p>
+            <h4>Elite Deal Broker</h4>
+            <p>Insurance consultations</p>
           </div>
           <div className="footer-section">
             <h4>Quick Links</h4>

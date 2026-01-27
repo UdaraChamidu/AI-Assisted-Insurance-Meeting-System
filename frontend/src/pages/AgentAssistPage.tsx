@@ -87,6 +87,15 @@ const AgentAssistPage: React.FC = () => {
       apiClient.chatAI(text, sessionId)
             .then(aiRes => {
                 setAIResponse(aiRes);
+                
+                // Add AI response to transcript
+                setTranscripts((prev) => [...prev, {
+                    text: aiRes.answer,
+                    speaker: 'ai',
+                    timestamp: new Date().toISOString(),
+                    confidence: 1.0
+                }]);
+
                 wsService.send('ai.response', {
                     text: aiRes.answer,
                     speaker: 'ai'
@@ -95,20 +104,29 @@ const AgentAssistPage: React.FC = () => {
             .catch(err => console.error(err));
   };
   
+  const handleDownloadTranscript = () => {
+      const element = document.createElement("a");
+      const file = new Blob(
+          [transcripts.map(t => `[${t.timestamp}] ${t.speaker.toUpperCase()}: ${t.text}`).join('\n')], 
+          {type: 'text/plain'}
+      );
+      element.href = URL.createObjectURL(file);
+      element.download = `transcript-${sessionId}.txt`;
+      document.body.appendChild(element); // Required for this to work in FireFox
+      element.click();
+      document.body.removeChild(element);
+  };
+
   const generateMeetingSummary = async () => {
       try {
-          // Combine transcripts into a single text
-          // We should ideally include Agent transcripts too if we had them. 
-          // For now, it's mostly customer + what AI said (maybe we should track AI responses too?)
-          // Let's just use what we have in `transcripts` state (Customer) + maybe AI responses? 
-          // Actually transcripts array currently only pushes customer text.
-          
           if (transcripts.length === 0) {
               setSummary("No transcript available to generate summary.");
               return;
           }
           
-          const fullText = transcripts.map(t => `Customer: ${t.text}`).join("\n");
+          // Use full conversation for summary
+          const fullText = transcripts.map(t => `${t.speaker}: ${t.text}`).join("\n");
+
           console.log("Generating summary for:", fullText.substring(0, 100) + "...");
           
           const res = await apiClient.generateSummary(fullText);
@@ -175,8 +193,11 @@ const AgentAssistPage: React.FC = () => {
             <h3>📝 Live Transcription</h3>
             <div className="controls">
               <span className="status-badge status-active">
-                🎧 Receiving Customer Audio
+                🎧 Live
               </span>
+              <button onClick={handleDownloadTranscript} className="btn-icon" title="Download Transcript">
+                📥
+              </button>
             </div>
           </div>
           <div className="panel-content">

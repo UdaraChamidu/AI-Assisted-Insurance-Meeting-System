@@ -64,8 +64,6 @@ const SendSMS: React.FC<SendSMSProps> = ({ onSuccess }) => {
                   customer_name: customerName || 'Customer',
                   meeting_time: 'Ready to schedule',
                   join_link: bookingUrl,
-                  meeting_id: 'N/A', // No meeting yet
-                  passcode: 'N/A',
                   description: notes || 'Please verify your contact info.',
               }
           );
