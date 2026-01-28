@@ -67,14 +67,16 @@ class Settings(BaseSettings):
     
     # Google Gemini
     google_api_key: str
-    gemini_model: str = "gemini-2.5-flash"
     
     # AI Provider
     ai_provider: str = "openai" # gemini or openai
     
+    # Gemini
+    gemini_model: str = "gemini-1.5-pro"
+    
     # OpenAI
     openai_api_key: Optional[str] = None
-    openai_model: str = "gpt-3.5-turbo"
+    openai_model: str = "gpt-4-turbo-preview"
     
     # Pinecone
     pinecone_api_key: str

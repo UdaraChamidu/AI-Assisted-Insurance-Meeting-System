@@ -3,14 +3,16 @@ WebSocket event handlers for processing real-time events.
 """
 
 from typing import Dict, Any
-from datetime import datetime
 from websocket.manager import connection_manager
-from services.gemini_service import gemini_service
+from services.ai_factory import get_ai_service
 from rag.retriever import retriever_service
 import logging
 import asyncio
 
 logger = logging.getLogger(__name__)
+
+# Initialize AI Service
+ai_service = get_ai_service()
 
 
 async def handle_transcription_event(
@@ -86,8 +88,8 @@ async def process_customer_query(
         except Exception as e:
             logger.warning(f"RAG Retrieval failed (skipping): {e}")
 
-        # 3. Generate AI Response (Gemini)
-        ai_response = gemini_service.generate_response(
+        # 3. Generate AI Response
+        ai_response = ai_service.generate_response(
             query=query,
             context_chunks=context_chunks
         )

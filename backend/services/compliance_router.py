@@ -1,15 +1,17 @@
-
-from services.gemini_service import gemini_service
+from services.ai_factory import get_ai_service
+from config import settings
 from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
 
+# Initialize service
+ai_service = get_ai_service()
+
 class ComplianceRouter:
     """
     Routes user queries to the correct Regulatory Universe (Folder).
     """
-    
     UNIVERSES = [
         "00_TrainingReference",
         "01_FL_State_Authority",
@@ -19,7 +21,6 @@ class ComplianceRouter:
         "05_FL_Medicaid_Agency",
         "06_Carrier_FMO_Policies"
     ]
-    
     SYSTEM_PROMPT = """You are a Compliance Router for a health insurance agency.
 Your ONLY job is to classify the user's question into exactly ONE of the following Regulatory Universes.
 
@@ -41,8 +42,8 @@ If the question is greetings or vague, output "NONE".
         """
         try:
             prompt = f"{self.SYSTEM_PROMPT}\n\nUSER QUESTION: {query}\n\nUNIVERSE:"
-            # Use specific method added to service
-            result = gemini_service.complete(prompt)
+            # Use AI Service
+            result = ai_service.complete(prompt)
             
             # Clean up result
             result = result.strip().replace('"', '').replace("'", "")

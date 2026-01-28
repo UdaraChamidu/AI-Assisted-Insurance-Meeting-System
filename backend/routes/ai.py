@@ -6,11 +6,14 @@ from fastapi import APIRouter, HTTPException
 from models import RAGQuery, AIResponse
 from pydantic import BaseModel
 from rag.retriever import retriever_service
-from services.gemini_service import gemini_service
+from services.ai_factory import get_ai_service
 from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Initialize AI Service
+ai_service = get_ai_service()
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 
@@ -21,7 +24,7 @@ class SummaryRequest(BaseModel):
 async def generate_summary(request: SummaryRequest):
     """Generate a summary of the conversation."""
     try:
-        summary = gemini_service.generate_summary(request.transcript)
+        summary = ai_service.generate_summary(request.transcript)
         return {"summary": summary}
     except Exception as e:
         logger.error(f"Summary generation failed: {str(e)}")
@@ -56,7 +59,7 @@ async def query_ai(request: RAGQuery):
         )
         
         # Generate AI response
-        ai_result = gemini_service.generate_response(
+        ai_result = ai_service.generate_response(
             query=request.query,
             context_chunks=rag_result['chunks']
         )
@@ -105,7 +108,7 @@ async def chat_ai(request: RAGQuery):
         logger.info(f"AI chat query: {request.query[:100]}")
         
         # Generate AI response with EMPTY context
-        ai_result = gemini_service.generate_response(
+        ai_result = ai_service.generate_response(
             query=request.query,
             context_chunks=[] 
         )
