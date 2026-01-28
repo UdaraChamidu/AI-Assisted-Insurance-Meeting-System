@@ -88,7 +88,7 @@ class Settings(BaseSettings):
     elevenlabs_voice_id: Optional[str] = None
     
     # Domain
-    domain: str = "https://ai-assisted-insurance-meeting-syste.vercel.app"
+    domain: str = "https://ai-assisted-insurance-meeting-system.vercel.app"
     
     @property
     def is_production(self) -> bool:
