@@ -174,7 +174,7 @@ const JoinPage: React.FC = () => {
       setAudioEnabled(true);
   };
 
-  const speakText = (text: string) => {
+  const speakText = (_text: string) => {
       // User requested to disable TTS
       // addLog(`🗣️ Speaking: ${text.substring(0, 20)}...`);
       // if (!window.speechSynthesis) {
