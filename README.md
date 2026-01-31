@@ -10,7 +10,7 @@ This system provides:
 - **Real-time Transcription**: Customer speech converted to text via Deepgram
 - **AI-Powered RAG**: Gemini AI provides answers based on your insurance knowledge base
 - **Staff-Only AI**: Customers never see AI responses - only staff do
-- **Voice Responses**: AI answers converted to voice for natural customer interaction
+- **Voice Responses**: AI answers converted to voice for natural customer interaction 
 
 ---
 
